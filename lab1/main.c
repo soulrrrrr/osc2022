@@ -23,58 +23,53 @@
  *
  */
 
-#include "uart.h"
 #include "mbox.h"
 #include "reboot.h"
+#include "uart.h"
 
 /**
  * @brief compare string
- * 
- * @param a first string 
- * @param b second string 
- * @param n compart bytes
- * @return int 1 means a equals b, 0 means a doesn't equals b
+ *
+ * @param a first string
+ * @param b second string
  */
-int strncmp(char *a, char *b, int n) {
-   for (int i = 0; i < n; i++) {
-       if (*(a+i) != *(b+i)) return 0;
-   }
-   return 1;
+int strcmp(char *a, char *b) {
+    while (*a != '\0' && *a == *b) {
+        a++;
+        b++;
+    }
+    return (*(unsigned char *)a) - (*(unsigned char *)b);
 }
 
-void main()
-{
+void main() {
     // set up serial console
     uart_init();
     uart_puts("Hello from Raspberry pi!\n");
-    
+
     char input[1024];
     int len;
 
-    while(1) {
+    while (1) {
         len = 0;
-        uart_send('\r');
-        uart_send('#');
-        uart_send(' ');
-        while(1) {
+        uart_puts("\r# ");
+        while (1) {
             input[len] = uart_getc();
             if (input[len] == '\n') {
+                input[len] = '\0';
                 uart_puts("\n");
                 break;
             }
             uart_send(input[len++]);
-            if (len >= 1024) break; // char array size
+            if (len >= 1023) break; // char array size
         }
-        if (strncmp(input, "help", 4)) {
+        if (strcmp(input, "help") == 0) {
             uart_puts("help\t: print this help menu\n");
             uart_puts("hello\t: print Hello World!\n");
             uart_puts("mailbox\t: show board revision and ARM memory size\n");
             uart_puts("reboot\t: reboot the device\n");
-        }
-        else if (strncmp(input, "hello", 5)) {
+        } else if (strcmp(input, "hello") == 0) {
             uart_puts("Hello World!\n");
-        }
-        else if (strncmp(input, "mailbox", 7)) {
+        } else if (strcmp(input, "mailbox") == 0) {
             if (!get_board_revision()) {
                 uart_puts("Fail to get board revision!\n");
                 continue;
@@ -92,8 +87,7 @@ void main()
             uart_puts("ARM memory size: ");
             uart_uint(mbox[6]);
             uart_puts(" bytes\n");
-        }
-        else if (strncmp(input, "reboot", 6)) {
+        } else if (strcmp(input, "reboot") == 0) {
             uart_puts("rebooting...\n");
             reset(10); // tick = 10
         }
