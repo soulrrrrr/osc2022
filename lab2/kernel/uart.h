@@ -23,16 +23,9 @@
  *
  */
 
-#include "uart.h"
-
-void main() {
-    // set up serial console
-    uart_init();
-
-    volatile unsigned char *code = (unsigned char *)0x100000;
-
-    for (int i = 0; i < 1846; i++) {
-        *(code + i) = (unsigned char)uart_getc();
-    }
-    uart_puts("Finish loading image\n");
-}
+void uart_init();
+void uart_send(unsigned int c);
+char uart_getc();
+void uart_uint(unsigned int i);
+void uart_puts(char *s);
+void uart_hex(unsigned int d);

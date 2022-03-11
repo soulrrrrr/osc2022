@@ -23,16 +23,22 @@
  *
  */
 
-#include "uart.h"
-
-void main() {
-    // set up serial console
-    uart_init();
-
-    volatile unsigned char *code = (unsigned char *)0x100000;
-
-    for (int i = 0; i < 1846; i++) {
-        *(code + i) = (unsigned char)uart_getc();
+SECTIONS
+{
+    . = 0x80000;
+    .text : { KEEP(*(.text.boot)) *(.text .text.* .gnu.linkonce.t*) }
+    .rodata : { *(.rodata .rodata.* .gnu.linkonce.r*) }
+    PROVIDE(_data = .);
+    .data : { *(.data .data.* .gnu.linkonce.d*) }
+    .bss (NOLOAD) : {
+        . = ALIGN(16);
+        __bss_start = .;
+        *(.bss .bss.*)
+        *(COMMON)
+        __bss_end = .;
     }
-    uart_puts("Finish loading image\n");
+    _end = .;
+
+   /DISCARD/ : { *(.comment) *(.gnu*) *(.note*) *(.eh_frame*) }
 }
+__bss_size = (__bss_end - __bss_start)>>3;
