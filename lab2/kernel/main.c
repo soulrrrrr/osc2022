@@ -38,7 +38,20 @@ void shell_input(char *input) {
 void main() {
     uart_init();
     uart_puts("Hello from Raspberry pi!\n");
+    void *memory = (void *)0x120000;
     char input[1024];
+    char *s = simple_malloc(&memory, 8);
+    uart_puts("Allocated 8 bytes of memory\n");
+    uart_hex((unsigned int)s);
+    uart_puts("\n");
+    s = simple_malloc(&memory, 34);
+    uart_puts("Allocated 34 bytes of memory\n");
+    uart_hex((unsigned int)s);
+    uart_puts("\n");
+    s = simple_malloc(&memory, 3);
+    uart_puts("Allocated 3 bytes of memory\n");
+    uart_hex((unsigned int)s);
+    uart_puts("\n");
 
     while (1) {
         uart_send('\r');

@@ -31,8 +31,8 @@ void main() {
 
     volatile unsigned char *code = (unsigned char *)0x100000;
 
-    for (int i = 0; i < 2206; i++) {
-        *(code + i) = (unsigned char)uart_getc();
+    for (int i = 0; i < 2606; i++) {
+        *(code + i) = (unsigned char)uart_getc_pure();
     }
     uart_puts("Finish loading image\n");
 }

@@ -101,6 +101,19 @@ char uart_getc() {
 }
 
 /**
+ * Receive a character without converting CR to LF
+ */
+char uart_getc_pure() {
+    char r;
+    /* wait until something is in the buffer */
+    do {
+        asm volatile("nop");
+    } while (!(*AUX_MU_LSR & 0x01)); // receiver overrun
+    /* read it and return */
+    r = (char)(*AUX_MU_IO);
+    return r;
+}
+/**
  * Display an unsigned int
  */
 void uart_uint(unsigned int i) {
