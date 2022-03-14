@@ -38,11 +38,11 @@ _start:
 2:  // cpu id == 0
 
     // set top of stack just before our code (stack grows to a lower address per AAPCS64)
-    ldr     x1, =_start
+    adr     x1, _start
     mov     sp, x1
 
     // clear bss
-    ldr     x1, =__bss_start
+    adr     x1, __bss_start
     ldr     w2, =__bss_size
     cbz     w2, 4f
 3:  str     xzr, [x1], #8
@@ -52,7 +52,5 @@ _start:
     // jump to C code, should not return
 4:  bl      main
     // branch to kernel.img
-    mov     x1, #0x100000
-    br      x1
     // for failsafe, halt this core too
     b       1b

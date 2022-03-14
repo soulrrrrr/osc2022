@@ -28,11 +28,24 @@
 void main() {
     // set up serial console
     uart_init();
+    
+    volatile unsigned char *bootloader = (unsigned char *)0x60000;
+    volatile unsigned char *code = (unsigned char *)0x80000;
+    for(int i = 0; i < 0x2000; i++) {
+        *(bootloader + i) = *(code + i);
+    }
 
-    volatile unsigned char *code = (unsigned char *)0x100000;
+    asm("b #-0x1FFFC");
+    
+    uart_puts("Loading...\n");
 
     for (int i = 0; i < 2606; i++) {
         *(code + i) = (unsigned char)uart_getc_pure();
     }
     uart_puts("Finish loading image\n");
+
+    asm("mov x1, #0x80000");
+    asm("add x1, x1, #0x14");
+    asm("br x1");
+
 }
