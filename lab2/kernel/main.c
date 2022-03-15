@@ -37,6 +37,7 @@ void shell_input(char *input) {
 
 void main() {
     uart_init();
+
     uart_puts("Hello from Raspberry pi!\n");
     void *memory = (void *)0x120000;
     char input[1024];

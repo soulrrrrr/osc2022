@@ -28,24 +28,38 @@
 void main() {
     // set up serial console
     uart_init();
-    
+    char c;
+    while((c = uart_getc()) != '\n')
+        ;
     volatile unsigned char *bootloader = (unsigned char *)0x60000;
     volatile unsigned char *code = (unsigned char *)0x80000;
     for(int i = 0; i < 0x2000; i++) {
         *(bootloader + i) = *(code + i);
     }
 
-    asm("b #-0x1FFFC");
+    asm volatile("b #-0x1FFFC");
     
     uart_puts("Loading...\n");
+
+    // int image_size = 0;
+    // char c;
+    // while((c = uart_getc()) != '\n') {
+    //     uart_send(c);
+    //     image_size *= 10;
+    //     image_size += (c - '0');
+    // }
+
+    // uart_puts("\nImage size: ");
+    // uart_uint((unsigned int)image_size);
+    // uart_puts(" bytes\n");
 
     for (int i = 0; i < 2606; i++) {
         *(code + i) = (unsigned char)uart_getc_pure();
     }
     uart_puts("Finish loading image\n");
 
-    asm("mov x1, #0x80000");
-    asm("add x1, x1, #0x14");
-    asm("br x1");
+    asm volatile("mov x19, #0x80000");
+    asm volatile("add x19, x19, #0x14");
+    asm volatile("br x19");
 
 }

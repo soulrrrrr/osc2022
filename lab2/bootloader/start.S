@@ -44,8 +44,8 @@ _start:
     // clear bss
     adr     x1, __bss_start
     ldr     w2, =__bss_size
-    cbz     w2, 4f
-3:  str     xzr, [x1], #8
+3:  cbz     w2, 4f
+    str     xzr, [x1], #8
     sub     w2, w2, #1
     cbnz    w2, 3b
 
