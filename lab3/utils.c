@@ -97,3 +97,10 @@ void exception_entry() {
     uart_hex_long(esrel1);
     uart_puts("\n");
 }
+
+
+void print_core_timer(unsigned long frq, unsigned long cnt) {
+    uart_puts("Core timer: ");
+    uart_ulong(cnt/frq);
+    uart_puts("\n");
+}

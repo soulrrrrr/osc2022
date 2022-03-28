@@ -133,6 +133,25 @@ void uart_uint(unsigned int i) {
 }
 
 /**
+ * Display an unsigned long
+ */
+void uart_ulong(unsigned long i) {
+    char c[20];
+    if (i == 0) {
+        uart_send('0');
+        return;
+    }
+    int digits = -1;
+    while (i != 0) {
+        c[++digits] = '0' + i % 10;
+        i /= 10;
+    }
+    for (; digits >= 0; --digits) {
+        uart_send(c[digits]);
+    }
+}
+
+/**
  * Display a string
  */
 void uart_puts(char *s) {

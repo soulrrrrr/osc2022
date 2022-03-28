@@ -22,10 +22,10 @@ void main() {
             uart_puts("running...\n");
             void *program_address = get_user_program_address();
             uart_hex((unsigned int) program_address);
-            asm volatile ("mov x0, 0x3c0");
+            asm volatile ("mov x0, 0"); // 被 0x3c0 騙了
             asm volatile ("msr spsr_el1, x0"); //Holds the saved process state when an exception is taken to EL1
             asm volatile ("msr elr_el1, %0": :"r" (program_address));
-            asm volatile ("mov x0, 0x100000");
+            asm volatile ("mov x0, 0x60000");
             asm volatile ("msr sp_el0, x0");
             asm volatile ("eret");
 
