@@ -29,8 +29,8 @@ void *get_user_program_address() {
         current += 110; // size of cpio_newc_header
         if (strcmp(current, "user.img") == 0)
             is_file = 1;
-        uart_puts(current);
-        uart_puts("\n");
+        //uart_puts(current);
+        //uart_puts("\n");
         current += name_size;
         while ((current - (char *)fs) % 4 != 0)
             current++;

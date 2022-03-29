@@ -21,8 +21,7 @@ void main() {
         if (strcmp(input, "run") == 0) {
             uart_puts("running...\n");
             void *program_address = get_user_program_address();
-            uart_hex((unsigned int) program_address);
-            asm volatile ("mov x0, 0"); // 被 0x3c0 騙了
+            asm volatile ("mov x0, 0"); // 被 0x3c0 juke了, 3c0 是關 interrupt
             asm volatile ("msr spsr_el1, x0"); //Holds the saved process state when an exception is taken to EL1
             asm volatile ("msr elr_el1, %0": :"r" (program_address));
             asm volatile ("mov x0, 0x60000");
