@@ -128,7 +128,7 @@ exception_vector_table:
 
     b exception_handler
     .align 7
-    b exception_handler_lower_irq
+    b exception_handler
     .align 7
     b exception_handler
     .align 7
@@ -178,6 +178,4 @@ core_timer_handler:
     ldp lr, x0, [sp], #16
     lsl x0, x0, #1
     msr cntp_tval_el0, x0
-    mov x0, 0
-    msr spsr_el1, x0
-1:  ret
+    ret
