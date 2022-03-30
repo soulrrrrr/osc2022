@@ -26,11 +26,12 @@
 .section ".text.boot"
 
 .global _start
+.globl from_el1_to_el0
+.type from_el1_to_el0, %function
 
 _start:
     bl from_el2_to_el1
     bl set_exception_vector_table
-    bl core_timer_enable
     // set top of stack just before our code (stack grows to a lower address per AAPCS64)
     adr     x1, _start
     mov     sp, x1
@@ -52,10 +53,18 @@ _start:
 from_el2_to_el1:
     mov x0, (1 << 31) // EL1 uses aarch64
     msr hcr_el2, x0
-    mov x0, 0x3c5 // EL1h (SPSel = 1) with interrupt disabled
+    mov x0, 0x3c5 // EL1h (SPSel = 1) with interrupt disabled (5 有用嗎?)
     msr spsr_el2, x0
     msr elr_el2, lr
     eret // return to EL1
+
+from_el1_to_el0:
+    mov x0, 0
+    msr spsr_el1, x0
+    msr elr_el1, lr
+    mov x0, 0x60000
+    msr sp_el0, x0
+    eret // return to EL0
 
 // save general registers to stack
 .macro save_all
@@ -110,7 +119,7 @@ exception_handler:
 
 exception_handler_lower_irq:
     save_all
-    bl core_timer_handler
+    bl uart_handler
     load_all
     eret
 
@@ -158,24 +167,3 @@ set_exception_vector_table:
     msr vbar_el1, x0
     ret
 
-.equ CORE0_TIMER_IRQ_CTRL, 0x40000040
-
-core_timer_enable:
-    mov x0, 1
-    msr cntp_ctl_el0, x0 // enable
-    mrs x0, cntfrq_el0
-    msr cntp_tval_el0, x0 // set expired time
-    mov x0, 2
-    ldr x1, =CORE0_TIMER_IRQ_CTRL
-    str w0, [x1] // unmask timer interrupt
-    ret
-
-core_timer_handler:
-    mrs x0, cntfrq_el0
-    mrs x1, cntpct_el0
-    stp lr, x0, [sp, #-16]!
-    bl print_core_timer
-    ldp lr, x0, [sp], #16
-    lsl x0, x0, #1
-    msr cntp_tval_el0, x0
-    ret

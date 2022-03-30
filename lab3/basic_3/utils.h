@@ -4,3 +4,4 @@ void *get_user_program_address();
 void shell_input(char *input);
 void exception_entry();
 void print_core_timer();
+void uart_handler();
