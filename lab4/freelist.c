@@ -9,11 +9,8 @@ void freelist_push(Freelist *head, Node *nodes, int num) {
         return;
     }
     Node *node = head->first;
-    while (node->next != NULL) {
-        node = node->next;
-    }
-    node->next = &nodes[num];
-    nodes[num].next = NULL;
+    nodes[num].next = node;
+    head->first = &nodes[num];
     return;
 }
 
@@ -30,7 +27,6 @@ void freelist_remove(Freelist *list, Node *nodes, int num) {
         list->first = current->next;
     else
         prev->next = current->next;
-    return;
 }
 
 void freelist_print(Freelist *list) {
