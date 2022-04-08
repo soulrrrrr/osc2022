@@ -2,36 +2,35 @@
 #include "uart.h"
 #include "utils.h"
 
-void freelist_push(Freelist *head, Node *nodes, int num) {
-    if (!head->first) {
-        head->first = &nodes[num];
+void freelist_push(Freelist *list, Node *nodes, int num) {
+    if (!list->head) {
+        list->head = &nodes[num];
         nodes[num].next = NULL;
+        nodes[num].prev = NULL;
         return;
     }
-    Node *node = head->first;
+    Node *node = list->head;
+    node->prev = &nodes[num];
     nodes[num].next = node;
-    head->first = &nodes[num];
+    list->head = &nodes[num];
     return;
 }
 
 void freelist_remove(Freelist *list, Node *nodes, int num) {
-    Node *prev = NULL;
-    Node *current = list->first;
-    // Walk the list
-    while (current->index != num) {
-        prev = current;
-        current = current->next;
-    }
+    Node *current = &nodes[num];
+    Node *pre = current->prev;
     // Remove the target by updating the head or the previous node.
-    if (!prev)
-        list->first = current->next;
-    else
-        prev->next = current->next;
+    if (!pre)
+        list->head = current->next;
+    else {
+        current->next->prev = pre;
+        pre->next = current->next;
+    }
 }
 
 void freelist_print(Freelist *list) {
     uart_puts("List: ");
-    for (Node *node = list->first; node != NULL; node = node->next) {
+    for (Node *node = list->head; node != NULL; node = node->next) {
         uart_uint(node->index);
         uart_puts(" ");
     }

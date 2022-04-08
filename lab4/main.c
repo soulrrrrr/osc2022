@@ -18,9 +18,9 @@ void main() {
     }
     frame_array[0] = LOG2_MAX_PAGES;
     for (int i = 0; i < LOG2_MAX_PAGES; i++) {
-        heads[i].first = NULL;
+        heads[i].head = NULL;
     }
-    heads[LOG2_MAX_PAGES].first = &nodes[0];
+    heads[LOG2_MAX_PAGES].head = &nodes[0];
     uart_puts("Hello from Raspberry pi!\n");
     char input[1024];
     while (1) {

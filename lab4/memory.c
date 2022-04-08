@@ -5,7 +5,7 @@
 
 int find_allocate_list(Freelist *heads, int needed_pages) {
     for (int i = needed_pages; i < LOG2_MAX_PAGES; i++) {
-        if (heads[i].first != NULL) {
+        if (heads[i].head != NULL) {
             return i;
         }
     }
@@ -13,7 +13,7 @@ int find_allocate_list(Freelist *heads, int needed_pages) {
 }
 
 int allocate_memory(Freelist *heads, Node *nodes, int *frames, int *frame_levels, int needed_level, int use_level) {
-    Node *fs = heads[use_level].first;
+    Node *fs = heads[use_level].head;
     int front = fs->index;
     freelist_remove(&heads[use_level], nodes, front);
     for (int i = use_level-1; i >= needed_level; i--) {
