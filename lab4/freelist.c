@@ -23,8 +23,13 @@ void freelist_remove(Freelist *list, Node *nodes, int num) {
     if (!pre)
         list->head = current->next;
     else {
-        current->next->prev = pre;
-        pre->next = current->next;
+        if (!current->next) {
+            pre->next = current->next;
+        }
+        else {
+            current->next->prev = pre;
+            pre->next = current->next;
+        }
     }
 }
 

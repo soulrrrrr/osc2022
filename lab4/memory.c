@@ -12,7 +12,7 @@ int find_allocate_list(Freelist *heads, int needed_pages) {
     return LOG2_MAX_PAGES;
 }
 
-int allocate_memory(Freelist *heads, Node *nodes, int *frames, int *frame_levels, int needed_level, int use_level) {
+int allocate_page(Freelist *heads, Node *nodes, int *frames, int *frame_levels, int needed_level, int use_level) {
     Node *fs = heads[use_level].head;
     int front = fs->index;
     freelist_remove(&heads[use_level], nodes, front);
@@ -35,7 +35,7 @@ int allocate_memory(Freelist *heads, Node *nodes, int *frames, int *frame_levels
     return fs->index;
 }
 
-void free_memory(Freelist *heads, Node *nodes, int *frames, int *frame_levels, int free_index) {
+void free_page(Freelist *heads, Node *nodes, int *frames, int *frame_levels, int free_index) {
     int level = frame_levels[free_index];
     if (level < 0) return;
     int free_level = LOG2_MAX_PAGES;

@@ -34,7 +34,7 @@ void main() {
             int size = (int)cstr_to_ulong(input);
             int needed_order = log2(size);
             int use_order = find_allocate_list(heads, needed_order);
-            int block_index = allocate_memory(heads, nodes, frame_array, frame_level_array, needed_order, use_order);
+            int block_index = allocate_page(heads, nodes, frame_array, frame_level_array, needed_order, use_order);
             for (int i = LOG2_MAX_PAGES; i >= 0; i--) {
                 freelist_print(&heads[i]);
             }
@@ -44,7 +44,7 @@ void main() {
         } else if (strcmp(input, "d") == 0) {
             shell_input(input);
             int free_index = (int)cstr_to_ulong(input);
-            free_memory(heads, nodes, frame_array, frame_level_array, free_index);
+            free_page(heads, nodes, frame_array, frame_level_array, free_index);
             for (int i = LOG2_MAX_PAGES; i >= 0; i--) {
                 freelist_print(&heads[i]);
             }

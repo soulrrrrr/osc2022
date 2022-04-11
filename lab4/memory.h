@@ -9,7 +9,7 @@
 
 #include "freelist.h"
 int find_allocate_list(Freelist *, int);
-int allocate_memory(Freelist *, Node *, int *, int *, int, int);
-void free_memory(Freelist *, Node *, int *, int *, int);
+int allocate_page(Freelist *, Node *, int *, int *, int, int);
+void free_page(Freelist *, Node *, int *, int *, int);
 
 #endif
