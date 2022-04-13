@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#define NULL 0
+#define ulong unsigned long
 int strcmp(char *s1, char *s2);
 int hex_to_int(char *p, int size);
 void *get_user_program_address();

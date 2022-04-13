@@ -22,7 +22,6 @@ void main() {
             uart_puts("Allocation finished: ");
             uart_hex(ptr);
             uart_puts("\n");
-            print_freelists();
         } else if (strcmp(input, "d") == 0) {
             shell_input(input);
             void *ptr = (void *)hex_to_int(input, 8);
@@ -30,7 +29,6 @@ void main() {
             uart_puts("Free finished: ");
             uart_hex(ptr);
             uart_puts("\n");
-            print_freelists();
         } else {
             uart_puts("Error input!\n");
         }
