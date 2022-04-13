@@ -20,15 +20,18 @@ void main() {
             int size = (int)cstr_to_ulong(input);
             void *ptr = malloc(size);
             uart_puts("Allocation finished: ");
-            uart_hex(ptr);
+            uart_hex((uint)ptr);
             uart_puts("\n");
         } else if (strcmp(input, "d") == 0) {
             shell_input(input);
-            void *ptr = (void *)hex_to_int(input, 8);
+            void *ptr = (void *)(ulong)hex_to_int(input, 8);
             free(ptr);
             uart_puts("Free finished: ");
-            uart_hex(ptr);
+            uart_hex((uint)ptr);
             uart_puts("\n");
+        } else if (strcmp(input, "pm") == 0) {
+            print_freelists();
+            print_memory();
         } else {
             uart_puts("Error input!\n");
         }

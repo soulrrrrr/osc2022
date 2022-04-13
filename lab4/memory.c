@@ -24,6 +24,7 @@ void memory_init() {
     memory_blocks.head->next = NULL;
     memory_blocks.head->size = 4096 - BLOCK_SIZE;
     memory_blocks.head->free = 1;
+    memory_blocks.head->pagetail = 1;
 }
 
 int find_allocate_list(Freelist *heads, int needed_pages) {
@@ -65,7 +66,6 @@ void free_page(Freelist *heads, Node *nodes, int *frames, int free_index) {
     frames[free_index] = BELONG_LEFT;
     int level = 0;
     int free_level = LOG2_MAX_PAGES;
-    int free_pages = MAX_PAGES;
     while(frames[free_index ^ pow2(level)] == BELONG_LEFT) { // 如果非最左邊區塊，終會到達index=0, frames[0]不可能BELONG_LEFT, 所以會跳出迴圈
         free_index &= ~(pow2(level));
         level++;
@@ -74,7 +74,6 @@ void free_page(Freelist *heads, Node *nodes, int *frames, int free_index) {
         int buddy = free_index ^ pow2(i);
         if (frames[buddy] != i) { // not same level or allocated
             free_level = i;
-            free_pages = pow2(i);
             break;
         }
         frames[buddy] = BELONG_LEFT;
@@ -83,21 +82,12 @@ void free_page(Freelist *heads, Node *nodes, int *frames, int free_index) {
         uart_int(buddy);
         uart_puts("\n");
         free_index &= ~(pow2(i));
-        // free_index &= ~(pow2(i+1)-1);
     }
     freelist_push(&heads[free_level], nodes, free_index);
     uart_puts("Push to freelist ");
     uart_int(free_index);
     uart_puts("\n");
     frames[free_index] = free_level;
-
-    for (int j = 0; j < (MAX_PAGES/16); j++) {
-        for (int i = 0; i < 16; i++) {
-            uart_int(frames[16*j+i]);
-            uart_puts(" ");
-        }
-        uart_puts("\n");
-    }
     return;
 }
 
@@ -126,6 +116,7 @@ void *malloc(int size) {
                 block_meta *new_page = malloc(PAGE_SIZE);
                 new_page->size = PAGE_SIZE-BLOCK_SIZE;
                 new_page->free = 1;
+                new_page->pagetail = 1;
                 new_page->next = NULL;
                 curr->next = new_page;
                 curr = curr->next;
@@ -136,13 +127,13 @@ void *malloc(int size) {
         /* allocate memory */
         int left_size = curr->size - size;
         block_meta *new_block = (block_meta *)((ulong)curr+BLOCK_SIZE+(ulong)size);
-        uart_hex(new_block);
-        uart_puts("\n");
         new_block->size = left_size;
         new_block->free = 1;
+        new_block->pagetail = curr->pagetail;
         new_block->next = curr->next;
         curr->size = size;
         curr->free = 0;
+        curr->pagetail = 0;
         curr->next = new_block;
         return (void *)((ulong)curr+BLOCK_SIZE);
 
@@ -165,12 +156,38 @@ void free(void *ptr) {
         block_meta *curr = memory_blocks.head;
         while(curr != NULL) {
             if (curr->free) {
-                while((curr->next != NULL) && curr->next->free) {
+                while(!curr->pagetail && (curr->next != NULL) && curr->next->free) {
                     curr->size += curr->next->size;
+                    curr->pagetail = curr->next->pagetail;
                     curr->next = curr->next->next;
                 }
             }
             curr = curr->next;
         }
+    }
+}
+
+void print_memory() {
+    block_meta *curr = memory_blocks.head;
+    while(curr != NULL) {
+        uart_puts("----------------\n");
+        uart_puts("Address: ");
+        uart_hex((ulong)curr + BLOCK_SIZE);
+        uart_puts("\n");
+        uart_puts("Size: ");
+        uart_int(curr->size);
+        uart_puts("\n");
+        uart_puts("Free: ");
+        if (curr->free)
+            uart_puts("Yes\n");
+        else
+            uart_puts("No\n");
+        uart_puts("Last block in the page: ");
+        if (curr->pagetail)
+            uart_puts("Yes\n");
+        else
+            uart_puts("No\n");
+
+        curr = curr->next;
     }
 }

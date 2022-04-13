@@ -7,12 +7,12 @@
 #define LOG2_MAX_PAGES 7
 #define LOG2_MAX_PAGES_PLUS_1 8
 #define NULL ((void *)0)
-
 #include "freelist.h"
 
 struct block_meta {
     int size;
-    int free;
+    short free;
+    short pagetail;
     struct block_meta *next;
 };
 
@@ -30,4 +30,5 @@ int allocate_page(Freelist *, Node *, int *, int, int);
 void free_page(Freelist *, Node *, int *, int);
 void *malloc(int);
 void free(void *);
+void print_memory();
 #endif
