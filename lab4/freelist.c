@@ -21,13 +21,19 @@ void freelist_push(Freelist *list, Node *nodes, int num) {
 }
 
 void freelist_remove(Freelist *list, Node *nodes, int num) {
+    debug("freelist_remove", num);
+    uart_puts("\n");
     Node *current = &nodes[num];
+    uart_hex(&nodes[num]);
+    uart_puts("\n");
     Node *pre = current->prev;
+    uart_hex(pre);
+    uart_puts("\n");
     // Remove the target by updating the head or the previous node.
-    if (!pre)
+    if (pre==NULL)
         list->head = current->next;
     else {
-        if (!current->next) {
+        if (current->next == NULL) {
             pre->next = current->next;
         }
         else {

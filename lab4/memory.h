@@ -8,7 +8,7 @@
 #define MAX_PAGES 0x40000 // total 0x40000000
 #define LOG2_MAX_PAGES 18
 #define LOG2_MAX_PAGES_PLUS_1 19
-#define NULL ((void *)0)
+#define NULL ((void *) 0)
 #include "freelist.h"
 
 struct block_meta {
