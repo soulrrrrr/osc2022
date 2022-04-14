@@ -3,6 +3,7 @@
 
 #define BELONG_LEFT -1
 #define ALLOCATED -2
+#define RESERVED -3
 
 struct Node {
     struct Node *next;

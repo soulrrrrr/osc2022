@@ -3,12 +3,24 @@
 #include "uart.h"
 #include "utils.h"
 
-Freelist heads[LOG2_MAX_PAGES_PLUS_1];
-Node nodes[MAX_PAGES];
-int frame_array[MAX_PAGES];
+//Freelist heads[LOG2_MAX_PAGES_PLUS_1];
+// Node nodes[MAX_PAGES];
+// int frame_array[MAX_PAGES];
+// blocklist memory_blocks;
+
+Freelist *heads;
+Node *nodes;
+int *frame_array;
 blocklist memory_blocks;
 
+extern char _end;
+
 void memory_init() {
+    void *base = (void *)&_end;
+    heads = (Freelist *)simple_malloc(&base, sizeof(Freelist)*LOG2_MAX_PAGES_PLUS_1);
+    nodes = (Node *)simple_malloc(&base, sizeof(Node)*MAX_PAGES);
+    frame_array = (int *)simple_malloc(&base, sizeof(int)*MAX_PAGES);
+
     for (int i = 0; i < MAX_PAGES; i++) {
         nodes[i].next = NULL;
         nodes[i].index = i;
@@ -19,16 +31,21 @@ void memory_init() {
         heads[i].head = NULL;
     }
     heads[LOG2_MAX_PAGES].head = &nodes[0];
+    
+    reserve_memory(0x0, (int)base);
+    reserve_memory(0x8000000, (int)(0x8000000+CPIO_SIZE));
+    reserve_memory(0x3c000000, 0x40000000);
 
     memory_blocks.head = (block_meta *)malloc(PAGE_SIZE);
     memory_blocks.head->next = NULL;
     memory_blocks.head->size = 4096 - BLOCK_SIZE;
     memory_blocks.head->free = 1;
     memory_blocks.head->pagetail = 1;
+
 }
 
 int find_allocate_list(Freelist *heads, int needed_pages) {
-    for (int i = needed_pages; i < LOG2_MAX_PAGES; i++) {
+    for (int i = needed_pages; i <= LOG2_MAX_PAGES; i++) {
         if (heads[i].head != NULL) {
             return i;
         }
@@ -36,33 +53,51 @@ int find_allocate_list(Freelist *heads, int needed_pages) {
     return LOG2_MAX_PAGES;
 }
 
-int allocate_page(Freelist *heads, Node *nodes, int *frames, int needed_level, int use_level) {
-    uart_puts("Allocate page for level ");
+int allocate_page(Freelist *heads, Node *nodes, int *frames, int needed_level, int index) {
+    uart_puts("\nAllocate page for level ");
     uart_int(needed_level);
     uart_puts("\n");
-    Node *fs = heads[use_level].head;
-    int front = fs->index;
-    freelist_remove(&heads[use_level], nodes, front);
-    for (int i = use_level-1; i >= needed_level; i--) {
-        int back = front | pow2(i);
-        freelist_push(&heads[i], nodes, back);
-        frames[back] = i;
-    }
-    frames[front] = ALLOCATED;
-    for (int j = 0; j < 8; j++) {
-        for (int i = 0; i < 16; i++) {
-            uart_int(frames[16*j+i]);
-            uart_puts(" ");
+    if (index >= 0) {
+        // reserve memory
+        int remove = index, push;
+        int use_level = needed_level;
+        while(frames[remove] != use_level) {
+            remove &= ~(pow2(use_level));
+            use_level++;
         }
-        uart_puts("\n");
+        freelist_remove(&heads[use_level], nodes, remove);
+        debug("Remove", remove);
+        for(int i = use_level-1; i >= needed_level; i--) {
+            debug("i", i);
+            remove ^= (index & pow2(i));
+            push = remove ^ pow2(i);
+            freelist_push(&heads[i], nodes, push);
+            frames[push] = i;
+            debug("Push", push);
+        }
+        frames[index] = ALLOCATED;
+        return 0; // no need to return anything
     }
-    return fs->index;
+    else {
+        // normal page allocation
+        int use_level = find_allocate_list(heads, needed_level);
+        Node *fs = heads[use_level].head;
+        int front = fs->index;
+        freelist_remove(&heads[use_level], nodes, front);
+        debug("Remove from freelist", front);
+        for (int i = use_level-1; i >= needed_level; i--) {
+            int back = front | pow2(i);
+            freelist_push(&heads[i], nodes, back);
+            debug("Push to freelist", back);
+            frames[back] = i;
+        }
+        frames[front] = ALLOCATED;
+        return fs->index;
+    }
 }
 
 void free_page(Freelist *heads, Node *nodes, int *frames, int free_index) {
-    uart_puts("Free page: ");
-    uart_int(free_index);
-    uart_puts("\n");
+    debug("Freeing page", free_index);
     frames[free_index] = BELONG_LEFT;
     int level = 0;
     int free_level = LOG2_MAX_PAGES;
@@ -78,15 +113,11 @@ void free_page(Freelist *heads, Node *nodes, int *frames, int free_index) {
         }
         frames[buddy] = BELONG_LEFT;
         freelist_remove(&heads[i], nodes, buddy);
-        uart_puts("Merge ");
-        uart_int(buddy);
-        uart_puts("\n");
+        debug("Merged", buddy);
         free_index &= ~(pow2(i));
     }
     freelist_push(&heads[free_level], nodes, free_index);
-    uart_puts("Push to freelist ");
-    uart_int(free_index);
-    uart_puts("\n");
+    debug("Push back to freelist", free_index);
     frames[free_index] = free_level;
     return;
 }
@@ -98,9 +129,8 @@ void *malloc(int size) {
         uart_int(need_pages);
         uart_puts(" page(s)\n");
         int needed_order = log2((size+PAGE_SIZE-1)/PAGE_SIZE);
-        int use_order = find_allocate_list(heads, needed_order);
-        void *ptr = (void *)(unsigned long)(MEMORY_BASE + allocate_page(heads, nodes, frame_array, needed_order, use_order) * PAGE_SIZE);
-        print_freelists();
+        void *ptr = (void *)(unsigned long)(MEMORY_BASE + allocate_page(heads, nodes, frame_array, needed_order, -1) * PAGE_SIZE);
+        //print_freelists();
         return ptr;
     }
     else {
@@ -144,10 +174,7 @@ void free(void *ptr) {
     if ((ulong)ptr % PAGE_SIZE == 0) {
         int free_index = ((unsigned long)ptr - MEMORY_BASE + (PAGE_SIZE-1)) / 0x1000;
         free_page(heads, nodes, frame_array, free_index);
-        print_freelists();
-        uart_puts("Freed page index: ");
-        uart_int(free_index);
-        uart_puts("\n");
+        //print_freelists();
     }
     else {
         block_meta *need_free = (block_meta *)((ulong)ptr-BLOCK_SIZE);
@@ -165,6 +192,30 @@ void free(void *ptr) {
             curr = curr->next;
         }
     }
+}
+
+void reserve_memory(int start, int end) {
+    int index = (start-MEMORY_BASE) / PAGE_SIZE;
+    int pages = ((end+PAGE_SIZE-1)-start) / PAGE_SIZE;
+    uart_puts("Pages: ");
+    uart_int(pages);
+    uart_puts("\n");
+    for (int i = 0; i < LOG2_MAX_PAGES; i++) {
+        if (index & pow2(i)) {
+            debug("allocate", i);
+            allocate_page(heads, nodes, frame_array, i, index);
+            index += pow2(i);
+            pages -= pow2(i); 
+        }
+        if (pages <= 0) break;
+        if (pow2(i) >= pages) {
+            allocate_page(heads, nodes, frame_array, log2(pages), index);
+            break;
+        }
+        if (pages <= 0) break;
+    }
+    uart_puts("[Reserve memory] Finished.\n");
+    print_freelists();
 }
 
 void print_memory() {

@@ -111,3 +111,12 @@ unsigned long cstr_to_ulong(char *s) {
     }
     return ret;
 }
+
+
+void debug(char *s, int n) {
+    if (!DEBUG) return;
+    uart_puts(s);
+    uart_puts(": ");
+    uart_int(n);
+    uart_puts("\n");
+}
