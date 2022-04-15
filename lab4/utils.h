@@ -3,6 +3,7 @@
 
 #define uint unsigned int
 #define ulong unsigned long
+#define size_t unsigned long
 #define DEBUG 1
 int strcmp(char *s1, char *s2);
 int hex_to_int(char *p, int size);

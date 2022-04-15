@@ -41,19 +41,18 @@ void main() {
     
     uart_puts("Loading...\n");
 
-    // int image_size = 0;
-    // char c;
-    // while((c = uart_getc()) != '\n') {
-    //     uart_send(c);
-    //     image_size *= 10;
-    //     image_size += (c - '0');
-    // }
+    int image_size = 0;
+    while((c = uart_getc()) != 's') {
+        uart_send(c);
+        image_size *= 10;
+        image_size += (c - '0');
+    }
 
-    // uart_puts("\nImage size: ");
-    // uart_uint((unsigned int)image_size);
-    // uart_puts(" bytes\n");
+    uart_puts("\nImage size: ");
+    uart_uint((unsigned int)image_size);
+    uart_puts(" bytes\n");
 
-    for (int i = 0; i < 2606; i++) {
+    for (int i = 0; i < image_size; i++) {
         *(code + i) = (unsigned char)uart_getc_pure();
     }
     uart_puts("Finish loading image\n");

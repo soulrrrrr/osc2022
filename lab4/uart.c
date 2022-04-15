@@ -45,15 +45,6 @@
 void uart_init() {
     register unsigned int r;
 
-    /* initialize UART */
-    *AUX_ENABLE |= 1; // enable UART1, AUX mini uart
-    *AUX_MU_IER = 0;
-    *AUX_MU_CNTL = 0;
-    *AUX_MU_LCR = 3; // 8 bits
-    *AUX_MU_MCR = 0;
-    *AUX_MU_IER = 0;
-    *AUX_MU_IIR = 0xc6; // disable interrupts
-    *AUX_MU_BAUD = 270; // 115200 baud
     /* map UART1 to GPIO pins */
     r = *GPFSEL1;
     r &= ~((7 << 12) | (7 << 15)); // gpio14, gpio15
@@ -69,6 +60,15 @@ void uart_init() {
     while (r--) {
         asm volatile("nop");
     }
+    /* initialize UART */
+    *AUX_ENABLE |= 1; // enable UART1, AUX mini uart
+    *AUX_MU_IER = 0;
+    *AUX_MU_CNTL = 0;
+    *AUX_MU_LCR = 3; // 8 bits
+    *AUX_MU_MCR = 0;
+    *AUX_MU_IER = 0;
+    *AUX_MU_IIR = 0xc6; // disable interrupts
+    *AUX_MU_BAUD = 270; // 115200 baud
     *GPPUDCLK0 = 0;   // flush GPIO setup
     *AUX_MU_CNTL = 3; // enable Tx, Rx
 }

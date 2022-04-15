@@ -32,8 +32,8 @@ void memory_init() {
     }
     heads[LOG2_MAX_PAGES].head = &nodes[0];
     
-    reserve_memory(0x0, (int)base);
-    reserve_memory(0x8000000, (int)(0x8000000+CPIO_SIZE));
+    reserve_memory(0x80000, (ulong)base);
+    reserve_memory(0x8000000, (0x8000000+CPIO_SIZE));
     reserve_memory(0x3c000000, 0x40000000);
 
     memory_blocks.head = (block_meta *)malloc(PAGE_SIZE);
@@ -119,8 +119,8 @@ void free_page(Freelist *heads, Node *nodes, int *frames, int free_index) {
     return;
 }
 
-void *malloc(int size) {
-    if (size >= (int)(PAGE_SIZE-BLOCK_SIZE)) {
+void *malloc(size_t size) {
+    if (size >= (PAGE_SIZE-BLOCK_SIZE)) {
         int need_pages = (size+PAGE_SIZE-1)/PAGE_SIZE;
         uart_puts("Need ");
         uart_int(need_pages);
@@ -133,6 +133,7 @@ void *malloc(int size) {
     else {
         uart_puts("Dynamic allocation\n");
         block_meta *curr = memory_blocks.head;
+        size = (size & ~15) + 16; // align to 16
         /* find split block */
         while(1) {
             if ((curr->free != (short)0) && (curr->size > size)) {
@@ -155,37 +156,23 @@ void *malloc(int size) {
         
         /* allocate memory */
         int left_size = curr->size - size;
-        block_meta *new_block = (block_meta *)((int)curr+BLOCK_SIZE+(int)size);
-        uart_hex(&new_block);
-        uart_puts("\n");
-        uart_hex(&new_block->size);
-        uart_puts("\n");
-        uart_int(new_block->size);
-        uart_puts("\n");
+        block_meta *new_block = (block_meta *)((ulong)curr+BLOCK_SIZE+(ulong)size);
         new_block->size = left_size;
-        uart_puts("a");
         new_block->free = 1;
-        uart_puts("a");
         new_block->pagetail = curr->pagetail;
-        uart_puts("a");
         new_block->next = curr->next;
-        uart_puts("a");
         curr->size = size;
-        uart_puts("a");
         curr->free = 0;
-        uart_puts("a");
         curr->pagetail = 0;
-        uart_puts("a");
         curr->next = new_block;
-        uart_puts("a");
-        return (void *)((int)curr+BLOCK_SIZE);
+        return (void *)((ulong)curr+BLOCK_SIZE);
 
     }
 }
 
 void free(void *ptr) {
     if ((ulong)ptr % PAGE_SIZE == 0) {
-        int free_index = ((unsigned long)ptr - MEMORY_BASE + (PAGE_SIZE-1)) / 0x1000;
+        int free_index = (int)(((ulong)ptr-MEMORY_BASE+(PAGE_SIZE-1)) / 0x1000);
         free_page(heads, nodes, frame_array, free_index);
         //print_freelists();
     }
@@ -207,7 +194,7 @@ void free(void *ptr) {
     }
 }
 
-void reserve_memory(int start, int end) {
+void reserve_memory(ulong start, ulong end) {
     int index = (start-MEMORY_BASE) / PAGE_SIZE;
     int pages = ((end+PAGE_SIZE-1)-start) / PAGE_SIZE;
     uart_puts("Pages: ");
