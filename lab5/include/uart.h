@@ -33,3 +33,4 @@ void uart_ulong(unsigned long i);
 void uart_puts(char *s);
 void uart_hex(unsigned int d);
 void uart_hex_long(unsigned long d);
+void putc(void *p, char c);

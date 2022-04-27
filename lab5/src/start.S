@@ -57,9 +57,18 @@ from_el2_to_el1:
     msr elr_el2, lr
     eret // return to EL1
 
+.globl from_el1_to_el0
+from_el1_to_el0:
+    mov x0, 0
+    msr spsr_el1, x0
+    msr elr_el1, lr
+    mov x0, 0x60000 // user space stack
+    msr sp_el0, x0
+    eret // return to EL0
+
 // save general registers to stack
 .macro save_all
-    sub sp, sp, 32 * 8
+    sub sp, sp, 32 * 9
     stp x0, x1, [sp ,16 * 0]
     stp x2, x3, [sp ,16 * 1]
     stp x4, x5, [sp ,16 * 2]
@@ -75,11 +84,24 @@ from_el2_to_el1:
     stp x24, x25, [sp ,16 * 12]
     stp x26, x27, [sp ,16 * 13]
     stp x28, x29, [sp ,16 * 14]
-    str x30, [sp, 16 * 15]
+
+    mrs x21, sp_el0
+    mrs	x22, elr_el1
+	mrs	x23, spsr_el1
+
+	stp	x30, x21, [sp, #16 * 15] 
+	stp	x22, x23, [sp, #16 * 16]
 .endm
 
 // load general registers from stack
 .macro load_all
+    ldp	x22, x23, [sp, #16 * 16]
+	ldp	x30, x21, [sp, #16 * 15] 
+
+    msr sp_el0, x21
+	msr	elr_el1, x22			
+	msr	spsr_el1, x23
+
     ldp x0, x1, [sp ,16 * 0]
     ldp x2, x3, [sp ,16 * 1]
     ldp x4, x5, [sp ,16 * 2]
@@ -95,8 +117,7 @@ from_el2_to_el1:
     ldp x24, x25, [sp ,16 * 12]
     ldp x26, x27, [sp ,16 * 13]
     ldp x28, x29, [sp ,16 * 14]
-    ldr x30, [sp, 16 * 15]
-    add sp, sp, 32 * 8
+    add sp, sp, 32 * 9
 .endm
 
 exception_handler_loop:
@@ -108,7 +129,16 @@ exception_handler:
     load_all
     eret
 
-exception_handler_irq:
+sync_exception_handler:
+    save_all
+    mrs x0, esr_el1 // to decide is syscall or not
+    mrs x1, elr_el1 // the address return to 
+    mov x2, sp      // trapframe
+    bl sync_exc_router
+    load_all
+    eret
+
+irq_exception_handler:
     save_all
     bl timer_interrupt
     load_all
@@ -132,16 +162,16 @@ exception_vector_table:
     b exception_handler
     .align 7
 
-    b exception_handler
+    b sync_exception_handler
     .align 7
-    b exception_handler_irq
+    b irq_exception_handler
     .align 7
     b exception_handler
     .align 7
     b exception_handler
     .align 7
 
-    b exception_handler
+    b sync_exception_handler
     .align 7
     b exception_handler_lower_irq
     .align 7

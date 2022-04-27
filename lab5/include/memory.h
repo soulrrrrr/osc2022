@@ -10,7 +10,7 @@
 #define LOG2_MAX_PAGES_PLUS_1 19
 #define NULL ((void *) 0)
 #include "freelist.h"
-#include "utils.h"
+#include "typedef.h"
 
 struct block_meta {
     int size;

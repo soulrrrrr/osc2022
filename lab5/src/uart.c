@@ -69,8 +69,8 @@ void uart_init() {
     *AUX_MU_IER = 0;
     *AUX_MU_IIR = 0xc6; // disable interrupts
     *AUX_MU_BAUD = 270; // 115200 baud
-    *GPPUDCLK0 = 0;   // flush GPIO setup
-    *AUX_MU_CNTL = 3; // enable Tx, Rx
+    *GPPUDCLK0 = 0;     // flush GPIO setup
+    *AUX_MU_CNTL = 3;   // enable Tx, Rx
 }
 
 /**
@@ -210,4 +210,9 @@ void uart_hex_long(unsigned long d) {
         n += n > 9 ? 0x37 : 0x30;
         uart_send(n);
     }
+}
+
+// This function is required by printf function
+void putc(void *p, char c) {
+    uart_send(c);
 }

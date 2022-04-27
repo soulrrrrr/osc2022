@@ -1,16 +1,6 @@
 #ifndef _SCHED_H
 #define _SCHED_H
 
-int thread_create(void *func);
-void preempt_disable(void);
-void preempt_enable(void);
-void _schedule();
-void schedule();
-
-void idle();
-void timer_tick();
-void kill_zombies();
-
 struct cpu_context {
 	unsigned long x19;
 	unsigned long x20;
@@ -38,7 +28,6 @@ struct Thread {
 };
 
 typedef struct Thread Thread;
-
 #define INIT_TASK \
 /*cpu_context*/	{ {0,0,0,0,0,0,0,0,0,0,0,0,0}, \
 /* state etc */	0,0,1,0,0,0 \
@@ -47,6 +36,18 @@ typedef struct Thread Thread;
 #define THREAD_SIZE 4096
 
 #define TASK_RUNNING 0
-#define TASK_FINISHED 1
+#define TASK_ZOMBIE 1
+
+Thread *current_thread();
+int thread_create(void *func);
+void preempt_disable(void);
+void preempt_enable(void);
+void _schedule();
+void schedule();
+
+void idle();
+void timer_tick();
+void kill_zombies();
+
 
 #endif //_SCHED_H

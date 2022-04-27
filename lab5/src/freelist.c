@@ -2,15 +2,16 @@
 #include "freelist.h"
 #include "uart.h"
 #include "utils.h"
+#include "printf.h"
 
 extern Freelist *heads;
 extern int *frame_array;
 
 void freelist_push(Freelist *list, Node *nodes, int num) {
+    nodes[num].next = NULL;
+    nodes[num].prev = NULL;
     if (!list->head) {
         list->head = &nodes[num];
-        nodes[num].next = NULL;
-        nodes[num].prev = NULL;
         return;
     }
     Node *node = list->head;
@@ -24,8 +25,12 @@ void freelist_remove(Freelist *list, Node *nodes, int num) {
     Node *current = &nodes[num];
     Node *pre = current->prev;
     // Remove the target by updating the head or the previous node.
-    if (pre==NULL)
+    if (pre==NULL) {
         list->head = current->next;
+        if (current->next != NULL) {
+            current->next->prev = pre;
+        }
+    }
     else {
         if (current->next == NULL) {
             pre->next = current->next;
@@ -35,6 +40,8 @@ void freelist_remove(Freelist *list, Node *nodes, int num) {
             pre->next = current->next;
         }
     }
+    current->prev = NULL;
+    current->next = NULL;
 }
 
 void print_freelists() {

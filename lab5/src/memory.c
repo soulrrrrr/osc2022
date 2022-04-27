@@ -2,6 +2,7 @@
 #include "freelist.h"
 #include "uart.h"
 #include "utils.h"
+#include "printf.h"
 
 Freelist *heads;
 Node *nodes;
@@ -117,9 +118,7 @@ void free_page(Freelist *heads, Node *nodes, int *frames, int free_index) {
 void *malloc(size_t size) {
     if (size >= (PAGE_SIZE-BLOCK_SIZE)) {
         int need_pages = (size+PAGE_SIZE-1)/PAGE_SIZE;
-        uart_puts("Allocate ");
-        uart_int(need_pages);
-        uart_puts(" page(s)\n");
+        printf("Allocate %d page(s)\n", need_pages);
         int needed_order = log2((size+PAGE_SIZE-1)/PAGE_SIZE);
         void *ptr = (void *)(unsigned long)(MEMORY_BASE + allocate_page(heads, nodes, frame_array, needed_order, -1) * PAGE_SIZE);
         //print_freelists();
@@ -168,6 +167,7 @@ void *malloc(size_t size) {
 void free(void *ptr) {
     if ((ulong)ptr % PAGE_SIZE == 0) {
         int free_index = (int)(((ulong)ptr-MEMORY_BASE+(PAGE_SIZE-1)) / 0x1000);
+        printf("Free page index %d\n", free_index);
         free_page(heads, nodes, frame_array, free_index);
         //print_freelists();
     }
