@@ -15,12 +15,12 @@
 #include "typedef.h"
 
 /* Function in sys.S */
-extern int getpid();
+extern int get_pid();
 extern size_t uart_read(char buf[], size_t size);
 extern size_t uart_write(const char buf[], size_t size);
 extern int exec(void(*func)());
 extern int fork();
-extern void exit(int status);int fork();
+extern void exit();
 
 
 #endif

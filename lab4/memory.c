@@ -2,11 +2,7 @@
 #include "freelist.h"
 #include "uart.h"
 #include "utils.h"
-
-//Freelist heads[LOG2_MAX_PAGES_PLUS_1];
-// Node nodes[MAX_PAGES];
-// int frame_array[MAX_PAGES];
-// blocklist memory_blocks;
+#include "printf.h"
 
 Freelist *heads;
 Node *nodes;
@@ -32,7 +28,7 @@ void memory_init() {
     }
     heads[LOG2_MAX_PAGES].head = &nodes[0];
     
-    reserve_memory(0x80000, (ulong)base);
+    reserve_memory(0x0, (ulong)base);
     reserve_memory(0x8000000, (0x8000000+CPIO_SIZE));
     reserve_memory(0x3c000000, 0x40000000);
 
@@ -122,9 +118,7 @@ void free_page(Freelist *heads, Node *nodes, int *frames, int free_index) {
 void *malloc(size_t size) {
     if (size >= (PAGE_SIZE-BLOCK_SIZE)) {
         int need_pages = (size+PAGE_SIZE-1)/PAGE_SIZE;
-        uart_puts("Need ");
-        uart_int(need_pages);
-        uart_puts(" page(s)\n");
+        printf("Allocate %d page(s)\n", need_pages);
         int needed_order = log2((size+PAGE_SIZE-1)/PAGE_SIZE);
         void *ptr = (void *)(unsigned long)(MEMORY_BASE + allocate_page(heads, nodes, frame_array, needed_order, -1) * PAGE_SIZE);
         //print_freelists();
@@ -173,6 +167,7 @@ void *malloc(size_t size) {
 void free(void *ptr) {
     if ((ulong)ptr % PAGE_SIZE == 0) {
         int free_index = (int)(((ulong)ptr-MEMORY_BASE+(PAGE_SIZE-1)) / 0x1000);
+        printf("Free page index %d\n", free_index);
         free_page(heads, nodes, frame_array, free_index);
         //print_freelists();
     }
@@ -197,9 +192,9 @@ void free(void *ptr) {
 void reserve_memory(ulong start, ulong end) {
     int index = (start-MEMORY_BASE) / PAGE_SIZE;
     int pages = ((end+PAGE_SIZE-1)-start) / PAGE_SIZE;
-    uart_puts("Pages: ");
+    uart_puts("Reserve ");
     uart_int(pages);
-    uart_puts("\n");
+    uart_puts(" page(s)\n");
     for (int i = 0; i < LOG2_MAX_PAGES; i++) {
         if (index & pow2(i)) {
             allocate_page(heads, nodes, frame_array, i, index);
@@ -213,8 +208,8 @@ void reserve_memory(ulong start, ulong end) {
         }
         if (pages <= 0) break;
     }
-    uart_puts("[Reserve memory] Finished.\n");
-    print_freelists();
+    //uart_puts("[Reserve memory] Finished.\n");
+    //print_freelists();
 }
 
 void print_memory() {

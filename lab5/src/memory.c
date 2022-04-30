@@ -131,7 +131,6 @@ void *malloc(size_t size) {
         /* find split block */
         while(1) {
             if ((curr->free != (short)0) && (curr->size > size)) {
-                uart_puts("here\n");
                 break;
             }
             if (curr->next == (block_meta *)NULL) {
@@ -172,6 +171,7 @@ void free(void *ptr) {
         //print_freelists();
     }
     else {
+        printf("[Free] %x\n", ptr);
         block_meta *need_free = (block_meta *)((ulong)ptr-BLOCK_SIZE);
         need_free->free = 1;
         /* remove block */

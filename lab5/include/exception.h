@@ -13,4 +13,7 @@ typedef struct Trapframe {
 
 void sync_exception_router(uint64_t esr_el1, uint64_t elr_el1, Trapframe *trapframe);
 void syscall(uint64_t syscall_num, Trapframe* trapframe);
+void sys_getpid(Trapframe *trapframe);
+void sys_fork(Trapframe *trapframe);
+void sys_exit(Trapframe *trapframe);
 #endif /* _EXCEPTION_H */

@@ -2,9 +2,11 @@
 #include "utils.h"
 #include "freelist.h"
 #include "memory.h"
+#include "printf.h"
 
 
 void main() {
+    init_printf(NULL, putc);
     uart_init();
     memory_init();
     uart_puts("Hello from Raspberry pi!\n");

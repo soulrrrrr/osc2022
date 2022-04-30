@@ -15,6 +15,7 @@ extern void enable_irq();
 extern void disable_irq();
 extern switch_to(void *, void *);
 
+
 int get_new_pid() {
 	Thread* p;
 	for (int i = 0; i < NR_TASKS; i++) {
@@ -42,7 +43,7 @@ void preempt_enable(void) {
 }
 
 int thread_create(void *func) {
-    Thread *p = malloc(PAGE_SIZE);
+    Thread *p = malloc(sizeof(Thread));
 	printf("thread_create %x\n", p);
     p->priority = 1;
     p->state = TASK_RUNNING;
@@ -51,13 +52,16 @@ int thread_create(void *func) {
 
     p->cpu_context.x19 = (ulong)func;
     p->cpu_context.lr = (ulong)run_thread;
-    p->cpu_context.sp = (ulong)p + THREAD_SIZE - 16;
+    //p->cpu_context.sp = (ulong)p + THREAD_SIZE - 16;
+	p->kernel_sp = malloc(PAGE_SIZE) + PAGE_SIZE - 16;
+	p->user_sp = malloc(PAGE_SIZE) + PAGE_SIZE - 16;
+    p->cpu_context.sp = p->kernel_sp; // kernel space
 
     int pid = get_new_pid();
     task[pid] = p;
 	p->pid = pid;
     preempt_enable();
-    return 0;
+    return pid;
 }
 
 void _schedule() {
@@ -87,7 +91,7 @@ void _schedule() {
 	//debug("now thread", current_thread());
 	//debug("next thread", task[next]);
     if (current_thread() != task[next]) {
-		debug("next pid", next);
+		printf("[scheduler] next pid: %d\n", next);
 		Thread *prev = current_thread();
 		//current_thread = task[next];
 	    switch_to(prev, task[next]);
@@ -105,7 +109,9 @@ void kill_zombies() {
 	for (int i = 1; i < NR_TASKS; i++) { // pick biggest c value
 		p = task[i];
 		if (p && p->state == TASK_ZOMBIE) {
-			free((void *)p);
+			free(p->kernel_sp & ~(PAGE_SIZE-1));
+			free(p->user_sp & ~(PAGE_SIZE-1));
+			free(p);
 			task[i] = NULL;
 		}
 	}
@@ -133,4 +139,9 @@ void timer_tick() {
 void end_thread(void) {
 	current_thread()->state = TASK_ZOMBIE;
 	schedule();
+}
+
+void task_init(void) {
+	Thread *p = current_thread();
+	asm volatile ("mrs %0, sp_el1":"=r"(p->kernel_sp));
 }

@@ -1,5 +1,6 @@
 #ifndef _SCHED_H
 #define _SCHED_H
+#include "typedef.h"
 
 struct cpu_context {
 	unsigned long x19;
@@ -25,12 +26,15 @@ struct Thread {
 	int preempt_count;
 	int pid;
 	int magic;
+	uint64_t kernel_sp;
+	uint64_t user_sp;
+
 };
 
 typedef struct Thread Thread;
 #define INIT_TASK \
 /*cpu_context*/	{ {0,0,0,0,0,0,0,0,0,0,0,0,0}, \
-/* state etc */	0,0,1,0,0,0 \
+/* state etc */	0,0,1,0,0,0,0x80000,0 \
 }
 #define NR_TASKS 64
 #define THREAD_SIZE 4096
@@ -48,6 +52,7 @@ void schedule();
 void idle();
 void timer_tick();
 void kill_zombies();
+void task_init(void);
 
 
 #endif //_SCHED_H

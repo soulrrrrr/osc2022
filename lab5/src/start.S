@@ -52,7 +52,7 @@ _start:
 from_el2_to_el1:
     mov x0, (1 << 31) // EL1 uses aarch64
     msr hcr_el2, x0
-    mov x0, 0x3c5 // EL1h (SPSel = 1) with interrupt disabled
+    mov x0, 0x5 // EL1h (SPSel = 1) with interrupt enabled
     msr spsr_el2, x0
     msr elr_el2, lr
     eret // return to EL1
@@ -138,8 +138,16 @@ sync_exception_handler:
     load_all
     eret
 
+irq_exception_handler_low:
+    save_all
+    mov x0, #0
+    bl timer_interrupt
+    load_all
+    eret
+
 irq_exception_handler:
     save_all
+    mov x0, #1
     bl timer_interrupt
     load_all
     eret
@@ -173,7 +181,7 @@ exception_vector_table:
 
     b sync_exception_handler
     .align 7
-    b exception_handler_lower_irq
+    b irq_exception_handler_low
     .align 7
     b exception_handler
     .align 7
@@ -206,7 +214,6 @@ core_timer_enable:
     ldr x1, =CORE0_TIMER_IRQ_CTRL
     str w0, [x1] // unmask timer interrupt
     ret
-
 
 .global switch_to
 switch_to:
@@ -251,18 +258,13 @@ disable_irq:
 	msr	DAIFSet, #2
 	ret
 
-core_timer_handler:
-    mrs x0, cntfrq_el0
-    mrs x1, cntpct_el0
-    stp lr, x0, [sp, #-16]!
-    bl timer_interrupt
-    ldp lr, x0, [sp], #16
-    lsl x0, x0, #1
-    msr cntp_tval_el0, x0
-    ret
-
 .globl run_thread
 run_thread:
     bl      preempt_enable
     blr     x19         //should never return
     bl      end_thread
+
+.globl ret_from_fork
+ret_from_fork:
+    load_all
+    ret
