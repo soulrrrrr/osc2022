@@ -20,7 +20,7 @@ void sync_exc_router(uint64_t esr_el1, uint64_t elr_el1, Trapframe *trapframe) {
         syscall(syscall_num, trapframe);
     }
     else {
-        return;
+        //return;
         printf("Exception return address 0x%x\n", elr_el1);
         printf("Exception class (EC) 0x%x\n", ec);
         printf("Instruction specific syndrome (ISS) 0x%x\n", iss);
@@ -70,7 +70,12 @@ void sys_getpid(Trapframe *trapframe) {
 
 void sys_fork(Trapframe *trapframe) {
     Thread *parent = current_thread();
+    /* 
+        ret_from_fork 會把 child_trapframe load to register，
+        這樣跑 child thread 時就會用到 child_trapframe 更改的 sp
+    */
     int newpid = thread_create(ret_from_fork);
+
     Thread *child = task[newpid];
     
     printf("child: %x\n", child);
@@ -79,10 +84,12 @@ void sys_fork(Trapframe *trapframe) {
     uint64_t kstack_offset = (char *)parent->kernel_sp - (char *)trapframe;
     uint64_t ustack_offset = (char *)parent->user_sp - (char *)trapframe->sp_el0;
 
+    // copy kernel stack (including trapframe)
     for (uint64_t i = 1; i <= kstack_offset; i++) {
         *((char *)(child->kernel_sp - i)) = *((char *)(parent->kernel_sp - i));
     }
 
+    // copy user stack
     for (uint64_t i = 1; i <= ustack_offset; i++) {
         *((char *)(child->user_sp - i)) = *((char *)(parent->user_sp - i));
     }
@@ -98,5 +105,6 @@ void sys_fork(Trapframe *trapframe) {
 }
 
 void sys_exit(Trapframe *trapframe) {
+    current_thread()->status = trapframe->x[0];
     end_thread();
 }

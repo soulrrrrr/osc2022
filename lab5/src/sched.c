@@ -48,6 +48,7 @@ int thread_create(void *func) {
     p->priority = 1;
     p->state = TASK_RUNNING;
     p->counter = p->priority;
+	p->status = 0;
     p->preempt_count = 1; //disable preemtion until schedule_tail
 
     p->cpu_context.x19 = (ulong)func;

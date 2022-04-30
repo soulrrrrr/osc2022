@@ -15,7 +15,7 @@
 #include "typedef.h"
 
 /* Function in sys.S */
-extern int get_pid();
+extern int getpid();
 extern size_t uart_read(char buf[], size_t size);
 extern size_t uart_write(const char buf[], size_t size);
 extern int exec(void(*func)());

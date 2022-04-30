@@ -1,8 +1,8 @@
 #define __ASSEMBLY__
 #include "sys.h"
 
-.global get_pid
-get_pid:
+.global getpid
+getpid:
     mov x8, SYS_GETPID
     svc #0
     ret

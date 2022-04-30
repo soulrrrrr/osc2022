@@ -25,7 +25,7 @@ struct Thread {
 	int priority;
 	int preempt_count;
 	int pid;
-	int magic;
+	int status;
 	uint64_t kernel_sp;
 	uint64_t user_sp;
 
