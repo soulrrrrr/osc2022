@@ -6,9 +6,11 @@
 #include "printf.h"
 #include "typedef.h"
 #include "sys.h"
+#include "mbox.h"
 #define N 5
 
 extern void delay();
+
 
 void fork_test(){
     printf("\nFork Test, pid %d\n", getpid());
@@ -19,7 +21,6 @@ void fork_test(){
         asm volatile("mov %0, sp" : "=r"(cur_sp));
         printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", getpid(), cnt, &cnt, cur_sp);
         ++cnt;
-
         if ((ret = fork()) != 0){
             asm volatile("mov %0, sp" : "=r"(cur_sp));
             printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", getpid(), cnt, &cnt, cur_sp);
@@ -35,6 +36,12 @@ void fork_test(){
         exit(0);
     }
     else {
+        volatile unsigned int __attribute__((aligned(16))) mbox[36];
+        get_board_revision(mbox);
+        mbox_call(MBOX_CH_PROP, mbox);
+        for (int i = 0; i < 8; i++) {
+            printf("mbox %d: %x\n", i, mbox[i]);
+        }
         printf("parent here, pid %d, child %d\n", getpid(), ret);
     }
 }

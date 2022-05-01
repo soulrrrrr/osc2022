@@ -35,3 +35,10 @@ fork:
 exit:
     mov x8, SYS_EXIT
     svc #0
+    ret
+
+.global mbox_call
+mbox_call:
+    mov x8, SYS_MBOX_CALL
+    svc #0
+    ret

@@ -54,8 +54,8 @@ int thread_create(void *func) {
     p->cpu_context.x19 = (ulong)func;
     p->cpu_context.lr = (ulong)run_thread;
     //p->cpu_context.sp = (ulong)p + THREAD_SIZE - 16;
-	p->kernel_sp = malloc(PAGE_SIZE) + PAGE_SIZE - 16;
-	p->user_sp = malloc(PAGE_SIZE) + PAGE_SIZE - 16;
+	p->kernel_sp = (ulong)malloc(PAGE_SIZE) + PAGE_SIZE - 16;
+	p->user_sp = (ulong)malloc(PAGE_SIZE) + PAGE_SIZE - 16;
     p->cpu_context.sp = p->kernel_sp; // kernel space
 
     int pid = get_new_pid();
@@ -110,8 +110,8 @@ void kill_zombies() {
 	for (int i = 1; i < NR_TASKS; i++) { // pick biggest c value
 		p = task[i];
 		if (p && p->state == TASK_ZOMBIE) {
-			free(p->kernel_sp & ~(PAGE_SIZE-1));
-			free(p->user_sp & ~(PAGE_SIZE-1));
+			free((void *)(p->kernel_sp & ~(PAGE_SIZE-1)));
+			free((void *)(p->user_sp & ~(PAGE_SIZE-1)));
 			free(p);
 			task[i] = NULL;
 		}

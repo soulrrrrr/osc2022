@@ -6,6 +6,8 @@
 #include "printf.h"
 #include "sched.h"
 #include "memory.h"
+#include "uart.h"
+#include "mbox.h"
 
 extern void end_thread(void);
 extern void ret_from_fork(void);
@@ -16,11 +18,11 @@ void sync_exc_router(uint64_t esr_el1, uint64_t elr_el1, Trapframe *trapframe) {
     int iss = esr_el1 & 0x1FFFFFF;
     if (ec == 0b010101) {  // is system call
         uint64_t syscall_num = trapframe->x[8];
-        printf("SYSCALL: %d\n", syscall_num);
+        printf("[SYSCALL] %d\n", syscall_num);
         syscall(syscall_num, trapframe);
     }
     else {
-        //return;
+        return;
         printf("Exception return address 0x%x\n", elr_el1);
         printf("Exception class (EC) 0x%x\n", ec);
         printf("Instruction specific syndrome (ISS) 0x%x\n", iss);
@@ -33,13 +35,13 @@ void syscall(uint64_t syscall_num, Trapframe* trapframe) {
             sys_getpid(trapframe);
             break;
 
-    //     case SYS_UART_READ:
-    //         sys_uart_read(trapframe);
-    //         break;
+        case SYS_UART_READ:
+            sys_uart_read(trapframe);
+            break;
 
-    //     case SYS_UART_WRITE:
-    //         sys_uart_write(trapframe);
-    //         break;
+        case SYS_UART_WRITE:
+            sys_uart_write(trapframe);
+            break;
 
         // case SYS_EXEC:
         //     sys_exec(trapframe);
@@ -51,6 +53,10 @@ void syscall(uint64_t syscall_num, Trapframe* trapframe) {
 
         case SYS_EXIT:
             sys_exit(trapframe);
+            break;
+
+        case SYS_MBOX_CALL:
+            sys_mbox_call(trapframe);
             break;
     }
     return;
@@ -66,6 +72,24 @@ void timer_interrupt(int i) {
 
 void sys_getpid(Trapframe *trapframe) {
     trapframe->x[0] = current_thread()->pid;
+}
+
+void sys_uart_read(Trapframe *trapframe) {
+    char *buf = (char *)trapframe->x[0];
+    size_t size = (size_t)trapframe->x[1];
+    for (int i = 0; i < size; i++) {
+        *(buf + i) = uart_getc();
+    }
+    trapframe->x[0] = size;
+}
+
+void sys_uart_write(Trapframe *trapframe) {
+    const char *buf = (const char *)trapframe->x[0];
+    size_t size = (size_t)trapframe->x[1];
+    for (int i = 0; i < size; i++) {
+        uart_send(*(buf + i));
+    }
+    trapframe->x[0] = size;
 }
 
 void sys_fork(Trapframe *trapframe) {
@@ -107,4 +131,11 @@ void sys_fork(Trapframe *trapframe) {
 void sys_exit(Trapframe *trapframe) {
     current_thread()->status = trapframe->x[0];
     end_thread();
+}
+
+void sys_mbox_call(Trapframe *trapframe) {
+    unsigned char ch = (unsigned char)trapframe->x[0];
+    unsigned int *mbox = (unsigned int *)trapframe->x[1];
+    int ret = mboxc_mbox_call(ch, mbox); // defined in mbox.c
+    trapframe->x[0] = ret;
 }
