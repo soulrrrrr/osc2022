@@ -89,14 +89,17 @@ void sys_uart_write(Trapframe *trapframe) {
 }
 
 void sys_exec(Trapframe *trapframe) {
+    preempt_disable();
     char *input = trapframe->x[0];
-    void *program_pos;
+    char *program_pos;
     cpio_newc_header *fs = (cpio_newc_header *)0x8000000;
     char *current = (char *)0x8000000;
+    int name_size;
+    int file_size;
     while (1) {
         fs = (cpio_newc_header *)current;
-        int name_size = hex_to_int(fs->c_namesize, 8);
-        int file_size = hex_to_int(fs->c_filesize, 8);
+        name_size = hex_to_int(fs->c_namesize, 8);
+        file_size = hex_to_int(fs->c_filesize, 8);
         current += 110;
         if (strcmp(current, "TRAILER!!!") == 0) {
             uart_puts("No such file!\n");
@@ -106,7 +109,7 @@ void sys_exec(Trapframe *trapframe) {
             current += name_size;
             while ((current - (char *)fs) % 4 != 0)
                 current++;
-            program_pos = current;
+            program_pos = (char *)current;
             break;
         } else {
             current += name_size;
@@ -117,10 +120,15 @@ void sys_exec(Trapframe *trapframe) {
                 current++;
         }
     }
-    printf("program pos : %x", program_pos);
+    char *new_program_pos = (char *)malloc(file_size);
+    for (int i = 0; i < file_size; i++) {
+        *(new_program_pos+i) = *(program_pos+i);
+    }
+    printf("program pos : %x", new_program_pos);
+    preempt_enable();
     Thread *cur = current_thread();
     asm volatile("msr sp_el0, %0" : : "r"(cur->user_sp));
-    asm volatile("msr elr_el1, %0": : "r"(program_pos));
+    asm volatile("msr elr_el1, %0": : "r"(new_program_pos));
     asm volatile("msr spsr_el1, %0" : : "r"(0x0));
     asm volatile("eret");
     trapframe->x[0] = 0;
