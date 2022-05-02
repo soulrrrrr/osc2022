@@ -7,14 +7,14 @@ getpid:
     svc #0
     ret
 
-.global uart_read
-uart_read:
+.global uartread
+uartread:
     mov x8, SYS_UART_READ
     svc #0
     ret
 
-.global uart_write
-uart_write:
+.global uartwrite
+uartwrite:
     mov x8, SYS_UART_WRITE
     svc #0
     ret
@@ -23,7 +23,7 @@ uart_write:
 exec:
     mov x8, SYS_EXEC
     svc #0
-    ret
+    ret // shouldn't go here
 
 .global fork
 fork:

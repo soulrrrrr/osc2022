@@ -62,14 +62,6 @@ void syscall(uint64_t syscall_num, Trapframe* trapframe) {
     return;
 }
 
-void timer_interrupt(int i) {
-    unsigned long cntfrq_el0;
-    asm volatile ("mrs %0, cntfrq_el0":"=r" (cntfrq_el0));
-    asm volatile ("lsr %0, %0, #5":"=r" (cntfrq_el0) :"r"(cntfrq_el0)); // 1/32 second tick
-    asm volatile ("msr cntp_tval_el0, %0" : : "r"(cntfrq_el0));
-    timer_tick();
-}
-
 void sys_getpid(Trapframe *trapframe) {
     trapframe->x[0] = current_thread()->pid;
 }
@@ -77,18 +69,22 @@ void sys_getpid(Trapframe *trapframe) {
 void sys_uart_read(Trapframe *trapframe) {
     char *buf = (char *)trapframe->x[0];
     size_t size = (size_t)trapframe->x[1];
+    enable_irq(); // 避免卡在 read 裡
     for (int i = 0; i < size; i++) {
         *(buf + i) = uart_getc();
     }
+    disable_irq();
     trapframe->x[0] = size;
 }
 
 void sys_uart_write(Trapframe *trapframe) {
     const char *buf = (const char *)trapframe->x[0];
     size_t size = (size_t)trapframe->x[1];
+    enable_irq();
     for (int i = 0; i < size; i++) {
         uart_send(*(buf + i));
     }
+    disable_irq();
     trapframe->x[0] = size;
 }
 
@@ -122,7 +118,8 @@ void sys_fork(Trapframe *trapframe) {
 
     Trapframe *child_trapframe = (Trapframe *)child->cpu_context.sp;
     child_trapframe->sp_el0 = child->user_sp - ustack_offset;
-    child_trapframe->spsr_el1 = 0x0; // el0
+    printf("child sp: %x\n", child_trapframe->sp_el0);
+    //child_trapframe->spsr_el1 = 0x0; // el0
 
     trapframe->x[0] = child->pid;
     child_trapframe->x[0] = 0;
@@ -138,4 +135,12 @@ void sys_mbox_call(Trapframe *trapframe) {
     unsigned int *mbox = (unsigned int *)trapframe->x[1];
     int ret = mboxc_mbox_call(ch, mbox); // defined in mbox.c
     trapframe->x[0] = ret;
+}
+
+void timer_interrupt(int i) {
+    unsigned long cntfrq_el0;
+    asm volatile ("mrs %0, cntfrq_el0":"=r" (cntfrq_el0));
+    asm volatile ("lsr %0, %0, #5":"=r" (cntfrq_el0) :"r"(cntfrq_el0)); // 1/32 second tick
+    asm volatile ("msr cntp_tval_el0, %0" : : "r"(cntfrq_el0));
+    timer_tick();
 }

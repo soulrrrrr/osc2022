@@ -267,4 +267,4 @@ run_thread:
 .globl ret_from_fork
 ret_from_fork:
     load_all
-    ret
+    eret

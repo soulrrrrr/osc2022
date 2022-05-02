@@ -17,9 +17,9 @@
 
 /* Function in sys.S */
 extern int getpid();
-extern size_t uart_read(char buf[], size_t size);
-extern size_t uart_write(const char buf[], size_t size);
-extern int exec(void(*func)());
+extern size_t uartread(char buf[], size_t size);
+extern size_t uartwrite(const char buf[], size_t size);
+extern int exec(const char *name, char *const argv[]);
 extern int fork();
 extern void exit(int status);
 extern int mbox_call(unsigned char ch, unsigned int *mbox);

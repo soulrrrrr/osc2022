@@ -11,11 +11,14 @@ typedef struct Trapframe {
     uint64_t spsr_el1;
 } Trapframe;
 
+extern void enable_irq();
+extern void disable_irq();
 void sync_exception_router(uint64_t esr_el1, uint64_t elr_el1, Trapframe *trapframe);
 void syscall(uint64_t syscall_num, Trapframe* trapframe);
 void sys_getpid(Trapframe *trapframe);
 void sys_uart_read(Trapframe *trapframe);
 void sys_uart_write(Trapframe *trapframe);
+void sys_exec(Trapframe *trapframe);
 void sys_fork(Trapframe *trapframe);
 void sys_exit(Trapframe *trapframe);
 void sys_mbox_call(Trapframe *trapframe);

@@ -3,7 +3,7 @@
 
 #define MEMORY_BASE 0x0
 #define SIMPLE_MALLOC_BASE 0x100000
-#define CPIO_SIZE 6656
+#define CPIO_SIZE 247296
 #define PAGE_SIZE 0x1000 // 4KB
 #define MAX_PAGES 0x40000 // total 0x40000000
 #define LOG2_MAX_PAGES 18

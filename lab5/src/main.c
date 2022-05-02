@@ -12,6 +12,13 @@
 extern void delay();
 
 
+void cpu_timer_register_enable() {
+    uint64_t tmp;
+    asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+    tmp |= 1;
+    asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
+}
+
 void fork_test(){
     printf("\nFork Test, pid %d\n", getpid());
     int cnt = 1;
@@ -58,6 +65,7 @@ void main() {
     init_printf(NULL, putc);
     uart_init();
     memory_init();
+    cpu_timer_register_enable();
     while (1) {
         char c = uart_getc();
         uart_send(c);
