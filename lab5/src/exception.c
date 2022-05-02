@@ -18,11 +18,11 @@ void sync_exc_router(uint64_t esr_el1, uint64_t elr_el1, Trapframe *trapframe) {
     int iss = esr_el1 & 0x1FFFFFF;
     if (ec == 0b010101) {  // is system call
         uint64_t syscall_num = trapframe->x[8];
-        printf("[SYSCALL] %d\n", syscall_num);
+        //printf("[SYSCALL] %d\n", syscall_num);
         syscall(syscall_num, trapframe);
     }
     else {
-        return;
+        //return;
         printf("Exception return address 0x%x\n", elr_el1);
         printf("Exception class (EC) 0x%x\n", ec);
         printf("Instruction specific syndrome (ISS) 0x%x\n", iss);
@@ -43,9 +43,9 @@ void syscall(uint64_t syscall_num, Trapframe* trapframe) {
             sys_uart_write(trapframe);
             break;
 
-        // case SYS_EXEC:
-        //     sys_exec(trapframe);
-        //     break;
+        case SYS_EXEC:
+            sys_exec(trapframe);
+            break;
 
         case SYS_FORK:
             sys_fork(trapframe);
@@ -86,6 +86,44 @@ void sys_uart_write(Trapframe *trapframe) {
     }
     disable_irq();
     trapframe->x[0] = size;
+}
+
+void sys_exec(Trapframe *trapframe) {
+    char *input = trapframe->x[0];
+    void *program_pos;
+    cpio_newc_header *fs = (cpio_newc_header *)0x8000000;
+    char *current = (char *)0x8000000;
+    while (1) {
+        fs = (cpio_newc_header *)current;
+        int name_size = hex_to_int(fs->c_namesize, 8);
+        int file_size = hex_to_int(fs->c_filesize, 8);
+        current += 110;
+        if (strcmp(current, "TRAILER!!!") == 0) {
+            uart_puts("No such file!\n");
+            break;
+        }
+        if (strcmp(current, input) == 0) {
+            current += name_size;
+            while ((current - (char *)fs) % 4 != 0)
+                current++;
+            program_pos = current;
+            break;
+        } else {
+            current += name_size;
+            while ((current - (char *)fs) % 4 != 0)
+                current++;
+            current += file_size;
+            while ((current - (char *)fs) % 4 != 0)
+                current++;
+        }
+    }
+    printf("program pos : %x", program_pos);
+    Thread *cur = current_thread();
+    asm volatile("msr sp_el0, %0" : : "r"(cur->user_sp));
+    asm volatile("msr elr_el1, %0": : "r"(program_pos));
+    asm volatile("msr spsr_el1, %0" : : "r"(0x0));
+    asm volatile("eret");
+    trapframe->x[0] = 0;
 }
 
 void sys_fork(Trapframe *trapframe) {

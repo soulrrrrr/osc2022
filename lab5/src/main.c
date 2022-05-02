@@ -81,7 +81,10 @@ void main() {
     // for(int i = 0; i < N*2; ++i) { // N should > 2
     //     thread_create(foo);
     // }
-    fork_test();
+    //fork_test();
+    int ret;
+    if ((ret = fork()) == 0)
+        exec("syscall.img", 0x0);
     idle();
     // char input[1024];
     // while (1) {

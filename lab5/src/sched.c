@@ -92,7 +92,7 @@ void _schedule() {
 	//debug("now thread", current_thread());
 	//debug("next thread", task[next]);
     if (current_thread() != task[next]) {
-		printf("[scheduler] next pid: %d\n", next);
+		//printf("[scheduler] next pid: %d\n", next);
 		Thread *prev = current_thread();
 		//current_thread = task[next];
 	    switch_to(prev, task[next]);
