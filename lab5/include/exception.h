@@ -39,4 +39,5 @@ void sys_exec(Trapframe *trapframe);
 void sys_fork(Trapframe *trapframe);
 void sys_exit(Trapframe *trapframe);
 void sys_mbox_call(Trapframe *trapframe);
+void sys_kill(Trapframe *trapframe);
 #endif /* _EXCEPTION_H */

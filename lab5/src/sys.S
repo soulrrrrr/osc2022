@@ -42,3 +42,9 @@ mbox_call:
     mov x8, SYS_MBOX_CALL
     svc #0
     ret
+
+.global kill
+kill:
+    mov x8, SYS_KILL
+    svc #0
+    ret

@@ -12,6 +12,7 @@
 extern void end_thread(void);
 extern void ret_from_fork(void);
 extern Thread *task[];
+extern void delay(int);
 
 void sync_exc_router(uint64_t esr_el1, uint64_t elr_el1, Trapframe *trapframe) {
     int ec = (esr_el1 >> 26) & 0b111111;
@@ -57,6 +58,9 @@ void syscall(uint64_t syscall_num, Trapframe* trapframe) {
 
         case SYS_MBOX_CALL:
             sys_mbox_call(trapframe);
+            break;
+        case SYS_KILL:
+            sys_kill(trapframe);
             break;
     }
     return;
@@ -124,7 +128,7 @@ void sys_exec(Trapframe *trapframe) {
     for (int i = 0; i < file_size; i++) {
         *(new_program_pos+i) = *(program_pos+i);
     }
-    printf("program pos : %x", new_program_pos);
+    printf("program pos : %x\n", new_program_pos);
     preempt_enable();
     Thread *cur = current_thread();
     asm volatile("msr sp_el0, %0" : : "r"(cur->user_sp));
@@ -165,7 +169,6 @@ void sys_fork(Trapframe *trapframe) {
     Trapframe *child_trapframe = (Trapframe *)child->cpu_context.sp;
     child_trapframe->sp_el0 = child->user_sp - ustack_offset;
     printf("child sp: %x\n", child_trapframe->sp_el0);
-    //child_trapframe->spsr_el1 = 0x0; // el0
 
     trapframe->x[0] = child->pid;
     child_trapframe->x[0] = 0;
@@ -189,4 +192,9 @@ void timer_interrupt(int i) {
     asm volatile ("lsr %0, %0, #5":"=r" (cntfrq_el0) :"r"(cntfrq_el0)); // 1/32 second tick
     asm volatile ("msr cntp_tval_el0, %0" : : "r"(cntfrq_el0));
     timer_tick();
+}
+
+void sys_kill(Trapframe *trapframe) {
+    int pid = trapframe->x[0];
+    task[pid]->state = TASK_ZOMBIE;
 }
