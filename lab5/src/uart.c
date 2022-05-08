@@ -214,5 +214,7 @@ void uart_hex_long(unsigned long d) {
 
 // This function is required by printf function
 void putc(void *p, char c) {
+    if (c == '\n')
+        uart_send('\r');
     uart_send(c);
 }

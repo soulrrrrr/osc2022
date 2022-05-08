@@ -10,9 +10,10 @@
 #define N 5
 
 extern void delay();
+extern void core_timer_enable();
 
 
-void cpu_timer_register_enable() {
+void cpu_timer_register_enable() { // 讓 el0 用 clock 不會 interrupt
     uint64_t tmp;
     asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
     tmp |= 1;
@@ -43,7 +44,7 @@ void fork_test(){
         exit(0);
     }
     else {
-        volatile unsigned int __attribute__((aligned(16))) mbox[36];
+        unsigned int __attribute__((aligned(16))) mbox[36];
         get_board_revision(mbox);
         mbox_call(MBOX_CH_PROP, mbox);
         for (int i = 0; i < 8; i++) {
@@ -62,9 +63,11 @@ void foo(){
 }
 
 void main() {
-    init_printf(NULL, putc);
     uart_init();
+    init_printf(NULL, putc);
     memory_init();
+    task_init();
+    core_timer_enable();
     cpu_timer_register_enable();
     while (1) {
         char c = uart_getc();

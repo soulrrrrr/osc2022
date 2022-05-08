@@ -143,6 +143,10 @@ void end_thread(void) {
 }
 
 void task_init(void) {
-	Thread *p = current_thread();
-	asm volatile ("mrs %0, sp_el1":"=r"(p->kernel_sp));
+	//Thread *p = current_thread();
+	//asm volatile ("mrs %0, sp_el1":"=r"(p->kernel_sp));
+	uint64_t init_task_addr = (uint64_t)&init_task;
+	asm volatile ("msr tpidr_el1, %0"::"r"(init_task_addr));
+	uint64_t sp_el0 = 0;
+	asm volatile ("msr sp_el0, %0"::"r"(sp_el0));
 }

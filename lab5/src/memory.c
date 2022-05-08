@@ -117,7 +117,7 @@ void free_page(Freelist *heads, Node *nodes, int *frames, int free_index) {
 
 void *malloc(size_t size) {
     if (size >= (PAGE_SIZE-BLOCK_SIZE)) {
-        int need_pages = (size+PAGE_SIZE-1)/PAGE_SIZE;
+        //int need_pages = (size+PAGE_SIZE-1)/PAGE_SIZE;
         int needed_order = log2((size+PAGE_SIZE-1)/PAGE_SIZE);
         void *ptr = (void *)(unsigned long)(MEMORY_BASE + allocate_page(heads, nodes, frame_array, needed_order, -1) * PAGE_SIZE);
         //print_freelists();

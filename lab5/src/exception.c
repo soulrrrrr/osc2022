@@ -23,10 +23,12 @@ void sync_exc_router(uint64_t esr_el1, uint64_t elr_el1, Trapframe *trapframe) {
         syscall(syscall_num, trapframe);
     }
     else {
-        //return;
         printf("Exception return address 0x%x\n", elr_el1);
         printf("Exception class (EC) 0x%x\n", ec);
         printf("Instruction specific syndrome (ISS) 0x%x\n", iss);
+        while(1){
+            ;
+        }
     }
 }
 
@@ -94,7 +96,7 @@ void sys_uart_write(Trapframe *trapframe) {
 
 void sys_exec(Trapframe *trapframe) {
     preempt_disable();
-    char *input = trapframe->x[0];
+    char *input = (char *)trapframe->x[0];
     char *program_pos;
     cpio_newc_header *fs = (cpio_newc_header *)0x8000000;
     char *current = (char *)0x8000000;
