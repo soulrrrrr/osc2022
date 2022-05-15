@@ -188,15 +188,15 @@ void sys_mbox_call(Trapframe *trapframe) {
     trapframe->x[0] = ret;
 }
 
+void sys_kill(Trapframe *trapframe) {
+    int pid = trapframe->x[0];
+    task[pid]->state = TASK_ZOMBIE;
+}
+
 void timer_interrupt(int i) {
     unsigned long cntfrq_el0;
     asm volatile ("mrs %0, cntfrq_el0":"=r" (cntfrq_el0));
     asm volatile ("lsr %0, %0, #5":"=r" (cntfrq_el0) :"r"(cntfrq_el0)); // 1/32 second tick
     asm volatile ("msr cntp_tval_el0, %0" : : "r"(cntfrq_el0));
     timer_tick();
-}
-
-void sys_kill(Trapframe *trapframe) {
-    int pid = trapframe->x[0];
-    task[pid]->state = TASK_ZOMBIE;
 }
