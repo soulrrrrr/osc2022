@@ -19,7 +19,7 @@ set_mair:
 .global create_page_table
 create_page_table:
     ldr x0, =pg_dir // PGD's page frame at 0x0
-    and x0, x0, #VA_MASK
+    and x0, x0, #VA_MASK // ttbr put physical address
     add x1, x0, 0x1000 // PUD's page frame at 0x1000
 
     ldr x2, =BOOT_PGD_ATTR

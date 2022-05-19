@@ -65,11 +65,11 @@ void foo(){
 
 void main() {
     //asm volatile ("ldr x0, =pg_dir");
-    asm volatile ("mov x0, #0");
-    asm volatile ("msr ttbr0_el1, x0");
-    asm volatile ("tlbi vmalle1is"); // invalidate all TLB entries
-    asm volatile ("dsb ish"); // ensure completion of TLB invalidatation
-    asm volatile ("isb"); // clear pipeline")
+    // asm volatile ("mov x0, #0");
+    // asm volatile ("msr ttbr0_el1, x0");
+    // asm volatile ("tlbi vmalle1is"); // invalidate all TLB entries
+    // asm volatile ("dsb ish"); // ensure completion of TLB invalidatation
+    // asm volatile ("isb"); // clear pipeline")
     uart_init();
     init_printf(NULL, putc);
     memory_init();
@@ -77,11 +77,11 @@ void main() {
     core_timer_enable();
     cpu_timer_register_enable();
     set_exception_vector_table();
-    while (1) {
-        char c = uart_getc();
-        uart_send(c);
-        if (c == 's') break;
-    }
+    // while (1) {
+    //     char c = uart_getc();
+    //     uart_send(c);
+    //     if (c == 's') break;
+    // }
     printf("%s", "\nHello from Raspberry pi!\n");
     // for(int i = 0; i < N; ++i) { // N should > 2
     //     thread_create(foo);
@@ -93,10 +93,11 @@ void main() {
     //     thread_create(foo);
     // }
     // fork_test();
-    // int ret;
-    // if ((ret = fork()) == 0)
-    //     exec("syscall.img", 0x0);
-    // idle();
+    int ret;
+    if ((ret = fork()) == 0)
+        exec("vm.img", 0x0);
+    idle();
+    /*
     char input[1024];
     while (1) {
         uart_send('\r');
@@ -106,17 +107,17 @@ void main() {
             uart_puts("running...\n");
         } else if (strcmp(input, "m") == 0) {
             shell_input(input);
-            int size = (int)cstr_to_ulong(input);
+            size_t size = cstr_to_ulong(input);
             void *ptr = malloc(size);
             uart_puts("Allocation finished: ");
-            uart_hex((uint)ptr);
+            uart_hex_long((ulong)ptr);
             uart_puts("\n");
         } else if (strcmp(input, "d") == 0) {
             shell_input(input);
             void *ptr = (void *)(ulong)hex_to_int(input, 8);
             free(ptr);
             uart_puts("Free finished: ");
-            uart_hex((uint)ptr);
+            uart_hex_long((ulong)ptr);
             uart_puts("\n");
         } else if (strcmp(input, "pm") == 0) {
             print_freelists();
@@ -125,4 +126,5 @@ void main() {
             uart_puts("Error input!\n");
         }
     }
+    */
 }

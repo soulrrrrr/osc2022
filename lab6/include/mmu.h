@@ -18,14 +18,38 @@
 
 // identity paging
 #define PD_TABLE 0b11
+#define PD_ENTRY 0b11
 #define PD_BLOCK 0b01
 #define PD_ACCESS (1 << 10)
+#define PD_USER_ACCESS (0b01 << 6)
 #define BOOT_PGD_ATTR PD_TABLE
 #define BOOT_PUD_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)
 
+#define PGD_INIT (PD_ACCESS | PD_USER_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_BLOCK)
+#define PTE_INIT (PD_ACCESS | PD_USER_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_ENTRY)
 
 #define VA_START    0xFFFF000000000000
 #define VA_MASK     0x0000FFFFFFFFFFFF
 #define LOW_MEMORY  0x80000
+#define PD_MASK                 0x1FFUL // 9 bit
+#define PGF_MASK    0xFFFFFFFFF000
+
+// user space constants
+#define USER_PC         0x0000000000000000
+#define USER_SP         0x0000FFFFFFFFF000
+#define USER_STACK_LOW  0x0000FFFFFFFFB000
+#define USER_STACK_SIZE 0x4000
+
+#ifndef __ASSEMBLY__
+#include "typedef.h"
+// page table & entry
+typedef unsigned long pte;
+typedef unsigned long pagetable;
+void mappages(pagetable *pg_table, uint64_t va, uint64_t size, uint64_t pa);
+pte *walk(pagetable *pg_table, uint64_t va, int alloc);
+uint64_t vir_to_phy(uint64_t vir);
+uint64_t phy_to_vir(uint64_t phy);
+uint64_t to_pfn(uint64_t addr);
+#endif
 
 #endif

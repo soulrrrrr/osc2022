@@ -8,6 +8,7 @@ Freelist *heads;
 Node *nodes;
 int *frame_array;
 blocklist memory_blocks;
+extern void memzero(void *, size_t);
 
 extern char _end;
 
@@ -121,6 +122,7 @@ void *malloc(size_t size) {
         int needed_order = log2((size+PAGE_SIZE-1)/PAGE_SIZE);
         void *ptr = (void *)(MEMORY_BASE + allocate_page(heads, nodes, frame_array, needed_order, -1) * PAGE_SIZE);
         //print_freelists();
+        memzero(ptr, pow2(needed_order)*PAGE_SIZE);
         printf("[Malloc] %x\n", ptr);
         return ptr;
     }

@@ -31,13 +31,12 @@ struct Thread {
 	uint64_t kernel_sp;
 	uint64_t user_sp;
 	uint64_t pgd;
-
 };
 
 typedef struct Thread Thread;
 #define INIT_TASK \
 /*cpu_context*/	{ {0,0,0,0,0,0,0,0,0,0,0,0,0}, \
-/* state etc */	0,0,1,0,0,0,0xffff000000080000,0,&pg_dir \
+/* state etc */	0,0,1,0,0,0,0xffff000000080000,0,0 \
 }
 #define NR_TASKS 64
 #define THREAD_SIZE 4096

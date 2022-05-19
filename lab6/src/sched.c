@@ -2,18 +2,23 @@
 #include "memory.h"
 #include "utils.h"
 #include "printf.h"
+#include "mmu.h"
+#include "typedef.h"
+#include "uart.h"
 
 static Thread init_task = INIT_TASK;
 //Thread *current_thread = &(init_task);
 Thread *task[NR_TASKS] = {&(init_task), };
 int nr_tasks = 1;
+extern char pg_dir;
 
 
 extern void run_thread(void);
 extern Thread *get_current(void);
 extern void enable_irq();
 extern void disable_irq();
-extern switch_to(void *, void *);
+extern void switch_to(void *, void *);
+extern void update_pgd(uint64_t);
 
 
 int get_new_pid() {
@@ -56,6 +61,8 @@ int thread_create(void *func) {
     //p->cpu_context.sp = (ulong)p + THREAD_SIZE - 16;
 	p->kernel_sp = (ulong)malloc(PAGE_SIZE) + PAGE_SIZE - 16;
 	p->user_sp = (ulong)malloc(PAGE_SIZE) + PAGE_SIZE - 16;
+	p->pgd = vir_to_phy((uint64_t)malloc(PAGE_SIZE));
+	uart_hex_long(p->pgd);
     p->cpu_context.sp = p->kernel_sp; // kernel space
 
     int pid = get_new_pid();
@@ -95,6 +102,7 @@ void _schedule() {
 		//printf("[scheduler] next pid: %d\n", next);
 		Thread *prev = current_thread();
 		//current_thread = task[next];
+		update_pgd(task[next]->pgd);
 	    switch_to(prev, task[next]);
 	}
 	preempt_enable();
@@ -143,7 +151,6 @@ void end_thread(void) {
 }
 
 void task_init(void) {
-	//Thread *p = current_thread();
 	//asm volatile ("mrs %0, sp_el1":"=r"(p->kernel_sp));
 	uint64_t init_task_addr = (uint64_t)&init_task;
 	asm volatile ("msr tpidr_el1, %0"::"r"(init_task_addr));
