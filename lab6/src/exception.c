@@ -14,6 +14,7 @@ extern void end_thread(void);
 extern void ret_from_fork(void);
 extern Thread *task[];
 extern void delay(int);
+extern void update_pgd(uint64_t);
 
 void sync_exc_router(uint64_t esr_el1, uint64_t elr_el1, Trapframe *trapframe) {
     int ec = (esr_el1 >> 26) & 0b111111;
@@ -133,8 +134,10 @@ void sys_exec(Trapframe *trapframe) {
     uint64_t new_program_pa = vir_to_phy(new_program_va);
     uint64_t user_stack_va = (uint64_t)malloc(USER_STACK_SIZE);
     uint64_t user_stack_pa = vir_to_phy(user_stack_va);
-    mappages(current_thread()->pgd, USER_PC, file_size, new_program_pa); // map user program's code
-    mappages(current_thread()->pgd, USER_STACK_LOW, USER_STACK_SIZE, user_stack_pa); // map user program's stack
+    mappages((pagetable *)current_thread()->pgd, USER_PC, file_size, new_program_pa); // map user program's code
+    mappages((pagetable *)current_thread()->pgd, USER_STACK_LOW, USER_STACK_SIZE, user_stack_pa); // map user program's stack
+    mappages((pagetable *)current_thread()->pgd, 0x3c000000, 0x3000000, 0x3c000000); // map user program's mbox
+
     for (int i = 0; i < file_size; i++) {
         *((char *)new_program_va+i) = *(program_pos+i);
     }
@@ -149,36 +152,35 @@ void sys_exec(Trapframe *trapframe) {
 }
 
 void sys_fork(Trapframe *trapframe) {
+    preempt_disable();
     Thread *parent = current_thread();
     /* 
-        ret_from_fork 會把 child_trapframe load to register，
+        ret_from_fork 會把 child_trapframe load 到 register，
         這樣跑 child thread 時就會用到 child_trapframe 更改的 sp
     */
     int newpid = thread_create(ret_from_fork);
 
     Thread *child = task[newpid];
     
-    printf("child: %x\n", child);
+    printf("child pid: %x\n", newpid);
     
     // copy kernel stack (including trapframe)
     uint64_t kstack_offset = (char *)parent->kernel_sp - (char *)trapframe;
     for (uint64_t i = 1; i <= kstack_offset; i++) {
         *((char *)(child->kernel_sp - i)) = *((char *)(parent->kernel_sp - i));
     }
-
-    // copy user stack
-    for (uint64_t i = 1; i <= ustack_offset; i++) {
-        *((char *)(child->user_sp - i)) = *((char *)(parent->user_sp - i));
-    }
-
     child->cpu_context.sp = child->kernel_sp - kstack_offset;
+
+    // copy all user program & stack
+    printf("Parent PGD: %x, User PGD: %x\n", parent->pgd, child->pgd);
+    if (parent->pgd != 0) copypages(phy_to_vir(parent->pgd), phy_to_vir(child->pgd), 0);
 
     Trapframe *child_trapframe = (Trapframe *)child->cpu_context.sp;
     child_trapframe->sp_el0 = trapframe->sp_el0;
-    printf("child sp: %x\n", child_trapframe->sp_el0);
 
     trapframe->x[0] = child->pid;
     child_trapframe->x[0] = 0;
+    preempt_enable();
 }
 
 void sys_exit(Trapframe *trapframe) {

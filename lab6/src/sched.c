@@ -62,7 +62,7 @@ int thread_create(void *func) {
 	p->kernel_sp = (ulong)malloc(PAGE_SIZE) + PAGE_SIZE - 16;
 	p->user_sp = (ulong)malloc(PAGE_SIZE) + PAGE_SIZE - 16;
 	p->pgd = vir_to_phy((uint64_t)malloc(PAGE_SIZE));
-	uart_hex_long(p->pgd);
+	// uart_hex_long(p->pgd);
     p->cpu_context.sp = p->kernel_sp; // kernel space
 
     int pid = get_new_pid();
@@ -99,7 +99,7 @@ void _schedule() {
 	//debug("now thread", current_thread());
 	//debug("next thread", task[next]);
     if (current_thread() != task[next]) {
-		//printf("[scheduler] next pid: %d\n", next);
+		printf("[scheduler] next pid: %d\n", next);
 		Thread *prev = current_thread();
 		//current_thread = task[next];
 		update_pgd(task[next]->pgd);

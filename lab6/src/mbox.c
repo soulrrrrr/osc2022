@@ -25,6 +25,7 @@
 
 #include "gpio.h"
 #include "printf.h"
+#include "mmu.h"
 
 /* mailbox message buffer */
 //volatile unsigned int __attribute__((aligned(16))) mbox[36];
@@ -53,8 +54,10 @@
  * Make a mailbox call. Returns 0 on failure, non-zero on success
  */
 int mboxc_mbox_call(unsigned char ch, unsigned int *mbox) {
+    unsigned long ka_mbox = va2phy_user((unsigned long)mbox) + ((unsigned long)mbox&0xFFF);
+    printf("mbox kernel addr location: 0x%x\n", ka_mbox);
     /* 28 bits (MSB) for value, 4 bits for channel type */
-    unsigned int r = (((unsigned int)((unsigned long)mbox) & ~0xF) | (ch & 0xF));
+    unsigned int r = (((unsigned int)((unsigned long)ka_mbox) & ~0xF) | (ch & 0xF));
     
     /* wait until we can write to the mailbox */
     do {
@@ -71,7 +74,8 @@ int mboxc_mbox_call(unsigned char ch, unsigned int *mbox) {
         /* is it a response to our message? */
         if (r == *MBOX_READ)
             /* is it a valid successful response? */
-            return mbox[1] == MBOX_RESPONSE;
+            return 1;
+            //return ((unsigned int *)phy_to_vir(ka_mbox))[1] == MBOX_RESPONSE;
     }
     return 0;
 }

@@ -123,7 +123,7 @@ void *malloc(size_t size) {
         void *ptr = (void *)(MEMORY_BASE + allocate_page(heads, nodes, frame_array, needed_order, -1) * PAGE_SIZE);
         //print_freelists();
         memzero(ptr, pow2(needed_order)*PAGE_SIZE);
-        printf("[Malloc] %x\n", ptr);
+        //printf("[Malloc] %x\n", ptr);
         return ptr;
     }
     else {
