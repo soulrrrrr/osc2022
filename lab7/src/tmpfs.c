@@ -69,18 +69,22 @@ int tmpfs_lookup(struct vnode* dir, struct vnode** target, const char* component
     }
     else if (!strcmp(component_name, "..")) { // todo: cross filesystem
         *target = dir;
+        if (dir->mount_parent) {
+            *target = dir->mount_parent;
+        }
         struct tmpfs_internal *t = ((struct tmpfs_internal *)dir->internal)->parent;
-        if (!t)
-            return 0;
+        if (!t) return 0;
         *target = ((struct tmpfs_internal *)dir->internal)->parent->vnode;
         return 0;
     }
     // search component_name in dir
+    if (dir->mount != NULL)
+        dir = dir->mount->root;
     for (int i = 0; i < MAX_ENTRIES; i++) {
         struct tmpfs_internal* file_node = ((struct tmpfs_internal*)dir->internal)->child[i];
         if ((file_node != NULL) & !strcmp(file_node->name, component_name)) {
             *target = file_node->vnode;
-            printf("lookup [0x%x]\n", *target);
+            printf("[lookup] 0x%x\n", *target);
             return 0;
         }
     }
@@ -89,7 +93,6 @@ int tmpfs_lookup(struct vnode* dir, struct vnode** target, const char* component
 }
 
 int tmpfs_write(struct file* file, const void* buf, size_t len) {
-    printf("tmpfs_write\n");
     if (((struct tmpfs_internal *)file->vnode->internal)->type != REGULAR_FILE) {
         printf("Write on not regular file\n");
         return -1;
@@ -101,7 +104,6 @@ int tmpfs_write(struct file* file, const void* buf, size_t len) {
     char *src = (char*)buf;
     size_t i = 0;
     for (; i < len; i++) {
-        printf("%c", src[i]);
         dest[i] = src[i];
     }
     //dest[i] = EOF;
@@ -109,7 +111,6 @@ int tmpfs_write(struct file* file, const void* buf, size_t len) {
 }
 
 int tmpfs_read(struct file* file, void* buf, size_t len) {
-    printf("tmpfs_read\n");
     if (((struct tmpfs_internal *)file->vnode->internal)->type != REGULAR_FILE) {
         printf("Read on not regular file\n");
         return -1;
@@ -119,8 +120,7 @@ int tmpfs_read(struct file* file, void* buf, size_t len) {
     char *dest = (char*)buf;
     char *src = &(file_node->data[file->f_pos]);
     size_t i = 0;
-    for (; i < len && i < MAX_FILESIZE; i++) {
-        printf("%c", src[i]);
+    for (; i < len && src[i] != '\0'; i++) {
         dest[i] = src[i];
     }
     file->f_pos += i;

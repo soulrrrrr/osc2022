@@ -229,6 +229,7 @@ void sys_open(Trapframe *trapframe) {
     struct file *handle;
     int ret = vfs_open(path, flags, &handle);
     if (ret < 0) {
+        printf("[Open] %s %d %d\n", path, flags, ret);
         trapframe->x[0] = -1;
         return;
     }
@@ -236,10 +237,12 @@ void sys_open(Trapframe *trapframe) {
         if (!current_thread()->fd_table[i]) {
             current_thread()->fd_table[i] = handle;
             trapframe->x[0] = i;
+            printf("[Open] %s %d %d\n", path, flags, i);
             return;
         }
     }
     trapframe->x[0] = -1;
+    printf("[Open] %s %d %d\n", path, flags, trapframe->x[0]);
 }
 
 void sys_close(Trapframe *trapframe) {
@@ -250,8 +253,9 @@ void sys_close(Trapframe *trapframe) {
     }
     struct file *handle = current_thread()->fd_table[fd];
     int ret = vfs_close(handle);
-    current_thread()->fd_table[fd] = NULL;
+    //current_thread()->fd_table[fd] = NULL;
     trapframe->x[0] = ret;
+    printf("[Close] %d %d\n", fd, ret);
 }
 
 void sys_write(Trapframe *trapframe) {
@@ -260,14 +264,17 @@ void sys_write(Trapframe *trapframe) {
     unsigned long count = trapframe->x[2];
     if (fd < 0) {
         trapframe->x[0] = -1;
+        printf("[Write] %d %d\n", fd, trapframe->x[0]);
         return;
     }
     struct file *handle = current_thread()->fd_table[fd];
     if (handle == NULL) {
         trapframe->x[0] = 0;
+        printf("[Write] %d %d\n", fd, trapframe->x[0]);
         return;
     }
     trapframe->x[0] = vfs_write(handle, buf, count);
+    printf("[Write] %d %d\n", fd, trapframe->x[0]);
 }
 
 void sys_read(Trapframe *trapframe) {
@@ -284,13 +291,15 @@ void sys_read(Trapframe *trapframe) {
         return;
     }
     trapframe->x[0] = vfs_read(handle, buf, count);
+    printf("[Read] %d %d %d\n", fd, count, trapframe->x[0]);
 
 }
 
 void sys_mkdir(Trapframe *trapframe) {
     char *pathname = trapframe->x[0];
     unsigned mode = trapframe->x[1];
-    return vfs_mkdir(pathname);
+    trapframe->x[0] = vfs_mkdir(pathname);
+    printf("[Mkdir] %s %d\n", pathname, trapframe->x[0]);
 }
 
 void sys_mount(Trapframe *trapframe) {
@@ -299,12 +308,14 @@ void sys_mount(Trapframe *trapframe) {
     char *filesystem = trapframe->x[2];
     unsigned long flags = trapframe->x[3];
     void *data = trapframe->x[4];
-    return vfs_mount(target, filesystem);
+    trapframe->x[0] = vfs_mount(target, filesystem);
+    printf("[Mount] %s %s %d\n", target, filesystem, trapframe->x[0]);
 }
 
 void sys_chdir(Trapframe *trapframe) {
     char *pathname = trapframe->x[0];
-    return vfs_chdir(pathname);
+    trapframe->x[0] = vfs_chdir(pathname);
+    printf("[Chdir] %s %d\n", pathname, trapframe->x[0]);
 }
 
 void timer_interrupt(int i) {

@@ -21,6 +21,7 @@ struct mount {
 
 struct vnode {
     struct mount *mount;
+    struct vnode *mount_parent;
     struct vnode_operations *v_ops;
     struct file_operations *f_ops;
     void *internal;

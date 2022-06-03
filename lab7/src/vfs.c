@@ -31,9 +31,9 @@ int register_filesystem(struct filesystem *fs) {
 
 void getdir_r(struct vnode* node, const char* path, struct vnode** target_node, char* target_path) {
     // find next /
-    printf("getdir_node [0x%x]\n", node);
+    //printf("getdir_node [0x%x]\n", node);
     if (!path[0]) {
-        printf("getdir_ret [0x%x]\n", *target_node);
+        //printf("getdir_ret [0x%x]\n", *target_node);
         return;
     }
     int i = 0;
@@ -50,15 +50,12 @@ void getdir_r(struct vnode* node, const char* path, struct vnode** target_node, 
     int ret = node->v_ops->lookup(node, &child_node, target_path);
     if (ret == 0) {
         if (child_node->mount != NULL) {
-            printf("GEID_MOUNT\n");
+            printf("MOUNT %x\n", child_node->mount);
             getdir_r(child_node->mount->root, path+i, target_node, target_path);
         }
         else {
             getdir_r(child_node, path+i, target_node, target_path);
         }
-    }
-    else {
-        printf("getdir_ret [0x%x]\n", *target_node);
     }
     // for (int j = 0; j < MAX_ENTRIES; j++) {
     //     struct tmpfs_internal *child_node = node->child[j];
@@ -85,11 +82,11 @@ void getdir(const char* pathname, struct vnode** target_node, char* target_path)
         struct vnode* rootnode = current_thread()->pwd;
         getdir_r(rootnode, pathname, target_node, target_path);
     }
+    printf("[Getdir] 0x%x\n", *target_node);
 }
 
 int vfs_open(const char *pathname, int flags, struct file **target) {
     // 1. Lookup pathname
-    printf("[Open] %s %d\n", pathname, flags);
     struct vnode *target_dir;
     char target_path[MAX_PATHNAME_LEN];
     getdir(pathname, &target_dir, target_path);
@@ -98,7 +95,7 @@ int vfs_open(const char *pathname, int flags, struct file **target) {
     // 3. Create a new file if O_CREAT is specified in flags and vnode not found
     // lookup error code shows if file exist or not or other error occurs
     struct vnode *target_file;
-    int lookup_res = rootfs->root->v_ops->lookup(target_dir, &target_file, target_path);
+    int lookup_res = target_dir->v_ops->lookup(target_dir, &target_file, target_path);
     if (lookup_res < 0) {
         if (flags & O_CREAT) {
             int create_res = rootfs->root->v_ops->create(target_dir, &target_file, target_path);
@@ -121,9 +118,7 @@ int vfs_open(const char *pathname, int flags, struct file **target) {
 }
 
 int vfs_close(struct file *file) {
-    printf("[Close]\n");
     // 1. release the file handle
-    //printf("[Close]\n");
     if (!file) return -1;
     free((void*)file);
     // 2. Return error code if fails
@@ -131,14 +126,12 @@ int vfs_close(struct file *file) {
 }
 
 int vfs_write(struct file *file, const void *buf, size_t len) {
-    printf("[Write]\n");
     // 1. write len byte from buf to the opened file.
     // 2. return written size or error code if an error occurs.
     return file->f_ops->write(file, buf, len);
 }
 
 int vfs_read(struct file *file, void *buf, size_t len) {
-    printf("[Read]\n");
     // 1. read min(len, readable size) byte to buf from the opened file.
     // 2. block if nothing to read for FIFO type
     // 3. return read size or error code if an error occurs.
@@ -146,13 +139,13 @@ int vfs_read(struct file *file, void *buf, size_t len) {
 }
 
 int vfs_mkdir(const char *pathname) {
-    printf("[Mkdir] %s\n", pathname);
     struct vnode *target_dir;
     char target_path[MAX_PATHNAME_LEN];
     getdir(pathname, &target_dir, target_path);
     struct vnode *child_dir;
     int mkdir_res = rootfs->root->v_ops->mkdir(target_dir, &child_dir, target_path);
     if (mkdir_res < 0) return mkdir_res;
+    printf("%x\n", child_dir);
     return 0;
 }
 
@@ -160,9 +153,8 @@ int vfs_mount(const char *target, const char *filesystem) {
     // check mountpoint is valid
     struct vnode* parent_dir;
     char path_remain[MAX_PATHNAME_LEN];
-    printf("[Mount] %s %s\n", target, filesystem);
     getdir(target, &parent_dir, path_remain);
-    
+    printf("MOunt parent %x\n", parent_dir);
     struct vnode *mount_dir;
     int lookup_res = parent_dir->v_ops->lookup(parent_dir, &mount_dir, path_remain);
     if (lookup_res < 0) return lookup_res;
@@ -170,14 +162,14 @@ int vfs_mount(const char *target, const char *filesystem) {
 
     // mount fs on mountpoint
     struct mount *mt = (struct mount*)malloc(sizeof(struct mount));
-    if (((struct tmpfs_internal *)mount_dir->internal)->type != DIRECTORY) return -1;
     struct filesystem* tmpfs = (struct filesystem*)malloc(sizeof(struct filesystem));
-    tmpfs->name = (char*)malloc(sizeof(char) * strlen(filesystem));
+    tmpfs->name = (char*)malloc(sizeof(char) * strlen(filesystem)+1);
     strcpy(tmpfs->name, filesystem);
     tmpfs->setup_mount = &tmpfs_setup_mount;
     tmpfs->setup_mount(tmpfs, mt);
     mount_dir->mount = mt;
 
+    mount_dir->mount->root->mount_parent = parent_dir;
     return 0;
 }
 
@@ -194,7 +186,6 @@ int vfs_lookup(const char *pathname, struct vnode **target) {
 }
 
 int vfs_chdir(const char* pathname) {
-    printf("[Chdir] %s\n", pathname);
     if (!strcmp(pathname, "/")) {
         current_thread()->pwd = rootfs->root;
         return 0;
@@ -203,7 +194,6 @@ int vfs_chdir(const char* pathname) {
     char path_remain[128];
     path_remain[0] = '\0';
     getdir(pathname, &parent_dir, path_remain);
-    printf("[Chdir] %s\n", path_remain);
     if (!strcmp(path_remain, "")) { // not found
         return 0;
     }
