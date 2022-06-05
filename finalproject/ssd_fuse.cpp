@@ -14,6 +14,9 @@
 #include <unistd.h>
 #include <time.h>
 #include <errno.h>
+#include <vector>
+#include <iostream>
+using namespace std;
 #include "ssd_fuse_header.h"
 #define SSD_NAME       "ssd_file"
 enum
@@ -190,24 +193,68 @@ static unsigned int get_next_pca()
 
 }
 
+//----------------------------------------------------------------
+vector<int> dirty_pages(13, 0);
+
+//----------------------------------------------------------------
 
 static int ftl_read( char* buf, size_t lba)
 {
+    cout << "[Read]" << endl;
     // TODO
     nand_read(buf, L2P[lba]);
 }
 
 static int ftl_write(const char* buf, size_t lba_range, size_t lba)
 {
+    cout << "[Write]" << endl;
     // TODO
-    printf("[Free block]: %d\n", free_block_number);
-    L2P[lba] = get_next_pca();
-    P2L[(L2P[lba] & 0xFFFF0000)*10 + (L2P[lba] & 0xFFFF)] = lba;
+    // detect dirty page
+    if (L2P[lba] != INVALID_PCA) {
+        dirty_pages[L2P[lba]>>16]++; //get nand
+    }
+    PCA_RULE temp;
+    temp.pca = get_next_pca();
+    L2P[lba] = temp.pca;
+    P2L[temp.fields.nand*10 + temp.fields.lba] = lba;
 
     nand_write(buf, L2P[lba]);
 }
 
+//----------------------------------------------------------------
 
+static void gc() {
+    cout << "[GC]" << endl;
+    int free_b = 2; // free n blocks
+    while(free_b--) {
+        int del = 0, pages = dirty_pages[0];
+        for (int i = 1; i < 13; i++) {
+            if (dirty_pages[i] > pages) {
+                del = i;
+                pages = dirty_pages[i];
+            }
+        }
+        if (pages == 0) continue;
+        cout << del << endl;
+        PCA_RULE temp;
+        char *buf = (char *)malloc(512);
+        for (int i = 0; i < 10; i++) {
+            temp.pca = L2P[P2L[del*10+i]];
+            printf("%x\n", temp.pca);
+            if (temp.fields.nand == del && temp.fields.lba == i) { // is valid page
+                // todo
+                ftl_read(buf, del*10+i);
+                ftl_write(buf, 0, del*10+i);
+            }
+            P2L[del*10+i] = INVALID_LBA;
+        }
+        free(buf);
+        nand_erase(del);
+        dirty_pages[del] = 0;
+    }
+    return;
+}
+//----------------------------------------------------------------
 
 static int ssd_file_type(const char* path)
 {
@@ -271,7 +318,7 @@ static int ssd_do_read(char* buf, size_t size, off_t offset)
 
     tmp_lba = offset / 512;
     tmp_lba_range = (offset + size - 1) / 512 - (tmp_lba) + 1;
-    tmp_buf = calloc(tmp_lba_range * 512, sizeof(char));
+    tmp_buf = (char *)calloc(tmp_lba_range * 512, sizeof(char));
 
     for (int i = 0; i < tmp_lba_range; i++) {
         // TODO
@@ -314,10 +361,13 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
     remain_size = size;
     curr_size = 0;
 
-    tmp_buf = malloc(512);
+    tmp_buf = (char *)malloc(512);
     for (idx = 0; idx < tmp_lba_range; idx++)
     {
         // TODO
+        // garbage collection
+        if (free_block_number < 3)
+            gc();
         ftl_read(tmp_buf, tmp_lba+idx);
         if (idx == 0) {
             if (offset % 512)
@@ -380,9 +430,9 @@ static int ssd_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
     {
         return -ENOENT;
     }
-    filler(buf, ".", NULL, 0, 0);
-    filler(buf, "..", NULL, 0, 0);
-    filler(buf, SSD_NAME, NULL, 0, 0);
+    filler(buf, ".", NULL, 0, (enum fuse_fill_dir_flags)0);
+    filler(buf, "..", NULL, 0, (enum fuse_fill_dir_flags)0);
+    filler(buf, SSD_NAME, NULL, 0, (enum fuse_fill_dir_flags)0);
     return 0;
 }
 static int ssd_ioctl(const char* path, unsigned int cmd, void* arg,
@@ -411,16 +461,18 @@ static int ssd_ioctl(const char* path, unsigned int cmd, void* arg,
     }
     return -EINVAL;
 }
+
 static const struct fuse_operations ssd_oper =
 {
     .getattr        = ssd_getattr,
-    .readdir        = ssd_readdir,
     .truncate       = ssd_truncate,
     .open           = ssd_open,
     .read           = ssd_read,
     .write          = ssd_write,
+    .readdir        = ssd_readdir,
     .ioctl          = ssd_ioctl,
 };
+
 int main(int argc, char* argv[])
 {
     int idx;
@@ -430,11 +482,11 @@ int main(int argc, char* argv[])
     curr_pca.pca = INVALID_PCA;
     free_block_number = PHYSICAL_NAND_NUM;
 
-    L2P = malloc(LOGICAL_NAND_NUM * PAGE_PER_BLOCK * sizeof(int));
+    L2P = (unsigned int *)malloc(LOGICAL_NAND_NUM * PAGE_PER_BLOCK * sizeof(int));
     memset(L2P, INVALID_PCA, sizeof(int) * LOGICAL_NAND_NUM * PAGE_PER_BLOCK);
-    P2L = malloc(PHYSICAL_NAND_NUM * PAGE_PER_BLOCK * sizeof(int));
+    P2L = (unsigned int *)malloc(PHYSICAL_NAND_NUM * PAGE_PER_BLOCK * sizeof(int));
     memset(P2L, INVALID_LBA, sizeof(int) * PHYSICAL_NAND_NUM * PAGE_PER_BLOCK);
-    valid_count = malloc(PHYSICAL_NAND_NUM * sizeof(int));
+    valid_count = (unsigned int *)malloc(PHYSICAL_NAND_NUM * sizeof(int));
     memset(valid_count, FREE_BLOCK, sizeof(int) * PHYSICAL_NAND_NUM);
 
     //create nand file
