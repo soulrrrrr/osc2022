@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <vector>
 #include <iostream>
 using namespace std;
@@ -128,7 +129,7 @@ static int nand_write(const char* buf, int pca)
 
 static int nand_erase(int block_index)
 {
-    printf("[NAND ERASE]\n");
+    printf("[NAND ERASE] %d\n", block_index);
     char nand_name[100];
     FILE* fptr;
     snprintf(nand_name, 100, "%s/nand_%d", NAND_LOCATION, block_index);
@@ -140,11 +141,12 @@ static int nand_erase(int block_index)
     }
     fclose(fptr);
     valid_count[block_index] = FREE_BLOCK;
+    free_block_number++;
     return 1;
 }
 
 static unsigned int get_next_block()
-{
+{   
     for (int i = 0; i < PHYSICAL_NAND_NUM; i++)
     {
         if (valid_count[(curr_pca.fields.nand + i) % PHYSICAL_NAND_NUM] == FREE_BLOCK)
@@ -194,27 +196,29 @@ static unsigned int get_next_pca()
 }
 
 //----------------------------------------------------------------
-vector<int> dirty_pages(13, 0);
 
 //----------------------------------------------------------------
 
 static int ftl_read( char* buf, size_t lba)
 {
-    cout << "[Read]" << endl;
     // TODO
+    //printf("[Read phy] %x\n", L2P[lba]);
     nand_read(buf, L2P[lba]);
 }
 
 static int ftl_write(const char* buf, size_t lba_range, size_t lba)
 {
-    cout << "[Write]" << endl;
     // TODO
     // detect dirty page
     if (L2P[lba] != INVALID_PCA) {
-        dirty_pages[L2P[lba]>>16]++; //get nand
+        printf("[Change to invalid] <log>%u <phy>%u\n", lba, (L2P[lba]>>16)*10+(L2P[lba]&0xffff));
+        valid_count[L2P[lba]>>16]--; //get nand
+        
+        P2L[(L2P[lba]>>16)*10+(L2P[lba]&0xffff)] = INVALID_LBA;
     }
     PCA_RULE temp;
     temp.pca = get_next_pca();
+    printf("[New] <phy>%u\n", (temp.pca>>16)*10+(temp.pca&0xffff));
     L2P[lba] = temp.pca;
     P2L[temp.fields.nand*10 + temp.fields.lba] = lba;
 
@@ -224,33 +228,46 @@ static int ftl_write(const char* buf, size_t lba_range, size_t lba)
 //----------------------------------------------------------------
 
 static void gc() {
-    cout << "[GC]" << endl;
-    int free_b = 2; // free n blocks
-    while(free_b--) {
-        int del = 0, pages = dirty_pages[0];
-        for (int i = 1; i < 13; i++) {
-            if (dirty_pages[i] > pages) {
+    int free_b = 7; // free n blocks
+    while(free_b > 0 || free_block_number < 2) {
+        // run gc
+        int del = -1;
+        unsigned int pages = 11;
+        for (int i = 0; i < 13; i++) {
+            if (i == curr_pca.fields.nand) continue;
+            if (valid_count[i] < pages) {
                 del = i;
-                pages = dirty_pages[i];
+                pages = valid_count[i];
             }
         }
-        if (pages == 0) continue;
-        cout << del << endl;
+        if (del == -1 || pages == FREE_BLOCK) {
+            break;
+        }
+        printf("[GC] %d ,%d pages\n", del, 10-pages);
         PCA_RULE temp;
         char *buf = (char *)malloc(512);
         for (int i = 0; i < 10; i++) {
-            temp.pca = L2P[P2L[del*10+i]];
-            printf("%x\n", temp.pca);
-            if (temp.fields.nand == del && temp.fields.lba == i) { // is valid page
+            //temp.pca = L2P[P2L[del*10+i]];
+            if (P2L[del*10+i] != INVALID_LBA) {
+            //if (temp.fields.nand == del && temp.fields.lba == i) { // is valid page
                 // todo
-                ftl_read(buf, del*10+i);
-                ftl_write(buf, 0, del*10+i);
+                //printf("temp pca: %d %d %x %d\n", del, i, L2P[P2L[del*10+i]], P2L[del*10+i]);
+                ftl_read(buf, P2L[del*10+i]);
+                ftl_write(buf, 0, P2L[del*10+i]);
+                P2L[del*10+i] = INVALID_LBA;
             }
-            P2L[del*10+i] = INVALID_LBA;
+            else {
+                free_b--;
+            }
         }
         free(buf);
         nand_erase(del);
-        dirty_pages[del] = 0;
+
+    }
+    printf("curr pca: %x\n", curr_pca.pca);
+    printf("finish GC\n");
+    for (int i = 0; i < 13; i++) {
+        printf("%x ", valid_count[i]);
     }
     return;
 }
@@ -322,10 +339,10 @@ static int ssd_do_read(char* buf, size_t size, off_t offset)
 
     for (int i = 0; i < tmp_lba_range; i++) {
         // TODO
-        ftl_read(tmp_buf+512*i, tmp_lba+i);
+        ftl_read(tmp_buf+(512*i), tmp_lba+i);
     }
 
-    memcpy(buf, tmp_buf + offset % 512, size);
+    memcpy(buf, tmp_buf + (offset % 512), size);
 
     
     free(tmp_buf);
@@ -366,15 +383,14 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
     {
         // TODO
         // garbage collection
-        if (free_block_number < 3)
+        if (free_block_number == 0)
             gc();
+        //if (L2P[tmp_lba+idx] != INVALID_PCA) // read-modify-write
         ftl_read(tmp_buf, tmp_lba+idx);
         if (idx == 0) {
-            if (offset % 512)
-                process_size = offset % 512;
-            else
-                process_size = 512;
-            memcpy((char *)tmp_buf+512-process_size, (char *)buf+curr_size, process_size);
+            process_size = 512 - (offset % 512);
+            if (size < process_size) process_size = size; // size < 512
+            memcpy((char *)tmp_buf+(offset % 512), (char *)buf+curr_size, process_size);
         }
         else if (idx == tmp_lba_range-1) {
             process_size = remain_size;
@@ -384,9 +400,9 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
             process_size = 512;
             memcpy((char *)tmp_buf, (char *)buf+curr_size, process_size);
         }
-        
         curr_size += process_size;
         remain_size -= process_size;
+        printf("[process] %d [curr] %d [remain] %d\n", process_size, curr_size, remain_size);
         ftl_write(tmp_buf, 0, tmp_lba+idx);
     }
     free(tmp_buf);

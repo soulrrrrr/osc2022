@@ -1,0 +1,350 @@
+0 8
+8 16
+next block 1/free block 11
+next block 2/free block 10
+24 16
+next block 3/free block 9
+40 16
+next block 4/free block 8
+next block 5/free block 7
+56 16
+next block 6/free block 6
+next block 7/free block 5
+72 16
+next block 8/free block 4
+88 12
+next block 9/free block 3
+88 3
+Change to Invalid: 88 8 88
+next block 10/free block 2
+Change to Invalid: 89 8 89
+Change to Invalid: 90 9 90
+88 3
+Change to Invalid: 88 10 100
+Change to Invalid: 89 10 101
+Change to Invalid: 90 10 102
+88 3
+Change to Invalid: 88 10 103
+Change to Invalid: 89 10 104
+Change to Invalid: 90 10 105
+88 3
+Change to Invalid: 88 10 106
+Change to Invalid: 89 10 107
+next block 11/free block 1
+Change to Invalid: 90 10 108
+88 3
+Change to Invalid: 88 10 109
+Change to Invalid: 89 11 110
+Change to Invalid: 90 11 111
+88 3
+Change to Invalid: 88 11 112
+Change to Invalid: 89 11 113
+Change to Invalid: 90 11 114
+88 3
+Change to Invalid: 88 11 115
+Change to Invalid: 89 11 116
+Change to Invalid: 90 11 117
+next block 12/free block 0
+88 3
+[GC] 10 ,10 pages
+[NAND ERASE] 10
+[GC] 12 ,9 pages
+temp pca: 12 0 c0000 90
+Change to Invalid: 90 12 120
+temp pca: 12 1 c0001 90
+Change to Invalid: 90 12 121
+temp pca: 12 2 c0002 90
+Change to Invalid: 90 12 122
+temp pca: 12 3 c0003 90
+Change to Invalid: 90 12 123
+temp pca: 12 4 c0004 90
+Change to Invalid: 90 12 124
+temp pca: 12 5 c0005 90
+Change to Invalid: 90 12 125
+temp pca: 12 6 c0006 90
+Change to Invalid: 90 12 126
+temp pca: 12 7 c0007 90
+Change to Invalid: 90 12 127
+temp pca: 12 8 c0008 90
+Change to Invalid: 90 12 128
+temp pca: 12 9 c0009 90
+Change to Invalid: 90 12 129
+next block 10/free block 0
+[NAND ERASE] 12
+Change to Invalid: 88 11 118
+Change to Invalid: 89 11 119
+Change to Invalid: 90 10 100
+88 3
+Change to Invalid: 88 10 101
+Change to Invalid: 89 10 102
+Change to Invalid: 90 10 103
+88 3
+Change to Invalid: 88 10 104
+Change to Invalid: 89 10 105
+Change to Invalid: 90 10 106
+88 3
+Change to Invalid: 88 10 107
+next block 12/free block 0
+[GC] 11 ,10 pages
+[NAND ERASE] 11
+[GC] 12 ,9 pages
+temp pca: 12 0 c0000 88
+Change to Invalid: 88 12 120
+temp pca: 12 1 c0001 88
+Change to Invalid: 88 12 121
+temp pca: 12 2 c0002 88
+Change to Invalid: 88 12 122
+temp pca: 12 3 c0003 88
+Change to Invalid: 88 12 123
+temp pca: 12 4 c0004 88
+Change to Invalid: 88 12 124
+temp pca: 12 5 c0005 88
+Change to Invalid: 88 12 125
+temp pca: 12 6 c0006 88
+Change to Invalid: 88 12 126
+temp pca: 12 7 c0007 88
+Change to Invalid: 88 12 127
+temp pca: 12 8 c0008 88
+Change to Invalid: 88 12 128
+temp pca: 12 9 c0009 88
+Change to Invalid: 88 12 129
+next block 11/free block 0
+[NAND ERASE] 12
+Change to Invalid: 89 10 108
+Change to Invalid: 90 10 109
+88 3
+Change to Invalid: 88 11 110
+Change to Invalid: 89 11 111
+Change to Invalid: 90 11 112
+88 3
+Change to Invalid: 88 11 113
+Change to Invalid: 89 11 114
+Change to Invalid: 90 11 115
+88 3
+Change to Invalid: 88 11 116
+Change to Invalid: 89 11 117
+next block 12/free block 0
+[GC] 10 ,10 pages
+[NAND ERASE] 10
+[GC] 12 ,9 pages
+temp pca: 12 0 c0000 89
+Change to Invalid: 89 12 120
+temp pca: 12 1 c0001 89
+Change to Invalid: 89 12 121
+temp pca: 12 2 c0002 89
+Change to Invalid: 89 12 122
+temp pca: 12 3 c0003 89
+Change to Invalid: 89 12 123
+temp pca: 12 4 c0004 89
+Change to Invalid: 89 12 124
+temp pca: 12 5 c0005 89
+Change to Invalid: 89 12 125
+temp pca: 12 6 c0006 89
+Change to Invalid: 89 12 126
+temp pca: 12 7 c0007 89
+Change to Invalid: 89 12 127
+temp pca: 12 8 c0008 89
+Change to Invalid: 89 12 128
+temp pca: 12 9 c0009 89
+Change to Invalid: 89 12 129
+next block 10/free block 0
+[NAND ERASE] 12
+Change to Invalid: 90 11 118
+88 3
+Change to Invalid: 88 11 119
+Change to Invalid: 89 10 100
+Change to Invalid: 90 10 101
+88 3
+Change to Invalid: 88 10 102
+Change to Invalid: 89 10 103
+Change to Invalid: 90 10 104
+88 3
+Change to Invalid: 88 10 105
+Change to Invalid: 89 10 106
+Change to Invalid: 90 10 107
+next block 12/free block 0
+88 3
+[GC] 11 ,10 pages
+[NAND ERASE] 11
+[GC] 12 ,9 pages
+temp pca: 12 0 c0000 90
+Change to Invalid: 90 12 120
+temp pca: 12 1 c0001 90
+Change to Invalid: 90 12 121
+temp pca: 12 2 c0002 90
+Change to Invalid: 90 12 122
+temp pca: 12 3 c0003 90
+Change to Invalid: 90 12 123
+temp pca: 12 4 c0004 90
+Change to Invalid: 90 12 124
+temp pca: 12 5 c0005 90
+Change to Invalid: 90 12 125
+temp pca: 12 6 c0006 90
+Change to Invalid: 90 12 126
+temp pca: 12 7 c0007 90
+Change to Invalid: 90 12 127
+temp pca: 12 8 c0008 90
+Change to Invalid: 90 12 128
+temp pca: 12 9 c0009 90
+Change to Invalid: 90 12 129
+next block 11/free block 0
+[NAND ERASE] 12
+Change to Invalid: 88 10 108
+Change to Invalid: 89 10 109
+Change to Invalid: 90 11 110
+88 3
+Change to Invalid: 88 11 111
+Change to Invalid: 89 11 112
+Change to Invalid: 90 11 113
+88 3
+Change to Invalid: 88 11 114
+Change to Invalid: 89 11 115
+Change to Invalid: 90 11 116
+88 3
+Change to Invalid: 88 11 117
+next block 12/free block 0
+[GC] 10 ,10 pages
+[NAND ERASE] 10
+[GC] 12 ,9 pages
+temp pca: 12 0 c0000 88
+Change to Invalid: 88 12 120
+temp pca: 12 1 c0001 88
+Change to Invalid: 88 12 121
+temp pca: 12 2 c0002 88
+Change to Invalid: 88 12 122
+temp pca: 12 3 c0003 88
+Change to Invalid: 88 12 123
+temp pca: 12 4 c0004 88
+Change to Invalid: 88 12 124
+temp pca: 12 5 c0005 88
+Change to Invalid: 88 12 125
+temp pca: 12 6 c0006 88
+Change to Invalid: 88 12 126
+temp pca: 12 7 c0007 88
+Change to Invalid: 88 12 127
+temp pca: 12 8 c0008 88
+Change to Invalid: 88 12 128
+temp pca: 12 9 c0009 88
+Change to Invalid: 88 12 129
+next block 10/free block 0
+[NAND ERASE] 12
+Change to Invalid: 89 11 118
+Change to Invalid: 90 11 119
+88 3
+Change to Invalid: 88 10 100
+Change to Invalid: 89 10 101
+Change to Invalid: 90 10 102
+88 3
+Change to Invalid: 88 10 103
+Change to Invalid: 89 10 104
+Change to Invalid: 90 10 105
+88 3
+Change to Invalid: 88 10 106
+Change to Invalid: 89 10 107
+next block 12/free block 0
+[GC] 11 ,10 pages
+[NAND ERASE] 11
+[GC] 12 ,9 pages
+temp pca: 12 0 c0000 89
+Change to Invalid: 89 12 120
+temp pca: 12 1 c0001 89
+Change to Invalid: 89 12 121
+temp pca: 12 2 c0002 89
+Change to Invalid: 89 12 122
+temp pca: 12 3 c0003 89
+Change to Invalid: 89 12 123
+temp pca: 12 4 c0004 89
+Change to Invalid: 89 12 124
+temp pca: 12 5 c0005 89
+Change to Invalid: 89 12 125
+temp pca: 12 6 c0006 89
+Change to Invalid: 89 12 126
+temp pca: 12 7 c0007 89
+Change to Invalid: 89 12 127
+temp pca: 12 8 c0008 89
+Change to Invalid: 89 12 128
+temp pca: 12 9 c0009 89
+Change to Invalid: 89 12 129
+next block 11/free block 0
+[NAND ERASE] 12
+Change to Invalid: 90 10 108
+88 3
+Change to Invalid: 88 10 109
+Change to Invalid: 89 11 110
+Change to Invalid: 90 11 111
+88 3
+Change to Invalid: 88 11 112
+Change to Invalid: 89 11 113
+Change to Invalid: 90 11 114
+88 3
+Change to Invalid: 88 11 115
+Change to Invalid: 89 11 116
+Change to Invalid: 90 11 117
+next block 12/free block 0
+88 3
+[GC] 10 ,10 pages
+[NAND ERASE] 10
+[GC] 12 ,9 pages
+temp pca: 12 0 c0000 90
+Change to Invalid: 90 12 120
+temp pca: 12 1 c0001 90
+Change to Invalid: 90 12 121
+temp pca: 12 2 c0002 90
+Change to Invalid: 90 12 122
+temp pca: 12 3 c0003 90
+Change to Invalid: 90 12 123
+temp pca: 12 4 c0004 90
+Change to Invalid: 90 12 124
+temp pca: 12 5 c0005 90
+Change to Invalid: 90 12 125
+temp pca: 12 6 c0006 90
+Change to Invalid: 90 12 126
+temp pca: 12 7 c0007 90
+Change to Invalid: 90 12 127
+temp pca: 12 8 c0008 90
+Change to Invalid: 90 12 128
+temp pca: 12 9 c0009 90
+Change to Invalid: 90 12 129
+next block 10/free block 0
+[NAND ERASE] 12
+Change to Invalid: 88 11 118
+Change to Invalid: 89 11 119
+Change to Invalid: 90 10 100
+88 3
+Change to Invalid: 88 10 101
+Change to Invalid: 89 10 102
+Change to Invalid: 90 10 103
+88 3
+Change to Invalid: 88 10 104
+Change to Invalid: 89 10 105
+Change to Invalid: 90 10 106
+88 3
+Change to Invalid: 88 10 107
+next block 12/free block 0
+[GC] 11 ,10 pages
+[NAND ERASE] 11
+[GC] 12 ,9 pages
+temp pca: 12 0 c0000 88
+Change to Invalid: 88 12 120
+temp pca: 12 1 c0001 88
+Change to Invalid: 88 12 121
+temp pca: 12 2 c0002 88
+Change to Invalid: 88 12 122
+temp pca: 12 3 c0003 88
+Change to Invalid: 88 12 123
+temp pca: 12 4 c0004 88
+Change to Invalid: 88 12 124
+temp pca: 12 5 c0005 88
+Change to Invalid: 88 12 125
+temp pca: 12 6 c0006 88
+Change to Invalid: 88 12 126
+temp pca: 12 7 c0007 88
+Change to Invalid: 88 12 127
+temp pca: 12 8 c0008 88
+Change to Invalid: 88 12 128
+temp pca: 12 9 c0009 88
+Change to Invalid: 88 12 129
+next block 11/free block 0
+[NAND ERASE] 12
+Change to Invalid: 89 10 108
+Change to Invalid: 90 10 109

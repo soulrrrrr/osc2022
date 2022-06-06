@@ -23,11 +23,49 @@ case "$1" in
         cat /dev/urandom | tr -dc '[:alpha:][:digit:]' | head -c 11264 > ${TEMP}
         for i in $(seq 0 9)
         do
-            dd if=${TEMP} skip=$(($i*1024)) of=${GOLDEN} oflag=seek_bytes seek=$(($i*5120)) bs=1024 count=1 conv=notrunc 2> /dev/null
-            dd if=${TEMP} skip=$(($i*1024)) of=${SSD_FILE} oflag=seek_bytes seek=$(($i*5120)) bs=1024 count=1 conv=notrunc 2> /dev/null
+            dd if=${TEMP} iflag=skip_bytes skip=$(($i*1024)) of=${GOLDEN} oflag=seek_bytes seek=$(($i*5120)) bs=1024 count=1 conv=notrunc 2> /dev/null
+            dd if=${TEMP} iflag=skip_bytes skip=$(($i*1024)) of=${SSD_FILE} oflag=seek_bytes seek=$(($i*5120)) bs=1024 count=1 conv=notrunc 2> /dev/null
         done
-        dd if=${TEMP} skip=10240 of=${GOLDEN} oflag=seek_bytes seek=0 bs=1024 count=1 conv=notrunc 2> /dev/null
-        dd if=${TEMP} skip=10240 of=${SSD_FILE} oflag=seek_bytes seek=0 bs=1024 count=1 conv=notrunc 2> /dev/null
+        dd if=${TEMP} iflag=skip_bytes skip=10240 of=${GOLDEN} oflag=seek_bytes seek=0 bs=1024 count=1 conv=notrunc 2> /dev/null
+        dd if=${TEMP} iflag=skip_bytes skip=10240 of=${SSD_FILE} oflag=seek_bytes seek=0 bs=1024 count=1 conv=notrunc 2> /dev/null
+        ;;
+    "test3")
+        cat /dev/urandom | tr -dc '[:alpha:][:digit:]' | head -c 51200 | tee ${SSD_FILE} > ${GOLDEN} 2> /dev/null
+        cat /dev/urandom | tr -dc '[:alpha:][:digit:]' | head -c 11264 > ${TEMP}
+        for i in $(seq 0 49)
+        do
+            dd if=${TEMP} iflag=skip_bytes skip=$(($i*512)) of=${GOLDEN} oflag=seek_bytes seek=$(($i*1024)) bs=1024 count=1 conv=notrunc 2> /dev/null
+            dd if=${TEMP} iflag=skip_bytes skip=$(($i*512)) of=${SSD_FILE} oflag=seek_bytes seek=$(($i*1024)) bs=1024 count=1 conv=notrunc 2> /dev/null
+        done
+        dd if=${TEMP} iflag=skip_bytes skip=10240 of=${GOLDEN} oflag=seek_bytes seek=0 bs=1024 count=1 conv=notrunc 2> /dev/null
+        dd if=${TEMP} iflag=skip_bytes skip=10240 of=${SSD_FILE} oflag=seek_bytes seek=0 bs=1024 count=1 conv=notrunc 2> /dev/null
+        ;;
+    "test4")
+        cat /dev/urandom | tr -dc '[:alpha:][:digit:]' | head -c 51200 | tee ${SSD_FILE} > ${GOLDEN} 2> /dev/null
+        cat /dev/urandom | tr -dc '[:alpha:][:digit:]' | head -c 51200 > ${TEMP}
+        for i in $(seq 0 400)
+        do
+            skip_b=$(shuf -i 10240-20480 -n 1)
+            seek_b=$(shuf -i 10240-20480 -n 1)
+            echo $skip_b $seek_b
+            dd if=${TEMP} iflag=skip_bytes skip=${skip_b} of=${GOLDEN} oflag=seek_bytes seek=${seek_b} bs=1024 count=1 conv=notrunc 2> /dev/null
+            dd if=${TEMP} iflag=skip_bytes skip=${skip_b} of=${SSD_FILE} oflag=seek_bytes seek=${seek_b} bs=1024 count=1 conv=notrunc 2> /dev/null
+            if [ ! -z "$(diff ${GOLDEN} ${SSD_FILE})" ]; then
+                echo -1
+                exit 1
+            fi
+        done
+        ;;
+    "mytest")
+        cat /dev/urandom | tr -dc '[:alpha:][:digit:]' | head -c 51200 | tee ${SSD_FILE} > ${GOLDEN} 2> /dev/null
+        cat /dev/urandom | tr -dc '[:alpha:][:digit:]' | head -c 51200 > ${TEMP}
+        skip_b=$(shuf -i 0-50176 -n 1)
+        seek_b=$(shuf -i 0-50176 -n 1)
+        for i in $(seq 0 100)
+        do
+            dd if=${TEMP} iflag=skip_bytes skip=${skip_b} of=${GOLDEN} oflag=seek_bytes seek=${seek_b} bs=1024 count=1 conv=notrunc 2> /dev/null
+            dd if=${TEMP} iflag=skip_bytes skip=${skip_b} of=${SSD_FILE} oflag=seek_bytes seek=${seek_b} bs=1024 count=1 conv=notrunc 2> /dev/null
+        done
         ;;
     *)
         printf "Usage: sh test.sh test_pattern\n"
