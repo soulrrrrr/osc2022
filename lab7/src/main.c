@@ -70,6 +70,7 @@ void main() {
     init_printf(NULL, putc);
     memory_init();
     rootfs_init();
+    mount_initramfs();
     task_init();
     core_timer_enable();
     cpu_timer_register_enable();

@@ -2,6 +2,7 @@
 #include "memory.h"
 #include "printf.h"
 #include "tmpfs.h"
+#include "initramfs.h"
 #include "typedef.h"
 #include "utils.h"
 #include "sched.h"
@@ -19,12 +20,21 @@ void rootfs_init() {
     tmpfs->setup_mount(tmpfs, rootfs);
 }
 
+void mount_initramfs() {
+    vfs_mkdir("/initramfs");
+    vfs_mount("/initramfs", "initramfs");
+}
+
 int register_filesystem(struct filesystem *fs) {
     // register the file system to the kernel.
     // you can also initialize memory pool of the file system here.
     if (!strcmp(fs->name, "tmpfs")) {
         printf("[%u] Register tmpfs\n", get_timestamp());
         return tmpfs_register();
+    }
+    if(!strcmp(fs->name, "initramfs")) {
+        printf("[%u] Register initramfs\n", get_timestamp());
+        return initramfs_register();
     }
     return -1;
 }
@@ -158,18 +168,32 @@ int vfs_mount(const char *target, const char *filesystem) {
     struct vnode *mount_dir;
     int lookup_res = parent_dir->v_ops->lookup(parent_dir, &mount_dir, path_remain);
     if (lookup_res < 0) return lookup_res;
-    printf("[Mount] [%s]\n", ((struct tmpfs_internal *)mount_dir->internal)->name);
+    //printf("[Mount] [%s]\n", ((struct tmpfs_internal *)mount_dir->internal)->name);
 
-    // mount fs on mountpoint
-    struct mount *mt = (struct mount*)malloc(sizeof(struct mount));
-    struct filesystem* tmpfs = (struct filesystem*)malloc(sizeof(struct filesystem));
-    tmpfs->name = (char*)malloc(sizeof(char) * strlen(filesystem)+1);
-    strcpy(tmpfs->name, filesystem);
-    tmpfs->setup_mount = &tmpfs_setup_mount;
-    tmpfs->setup_mount(tmpfs, mt);
-    mount_dir->mount = mt;
+    if (!strcmp(filesystem, "tmpfs")) {
+        // mount fs on mountpoint
+        struct mount *mt = (struct mount*)malloc(sizeof(struct mount));
+        struct filesystem* tmpfs = (struct filesystem*)malloc(sizeof(struct filesystem));
+        tmpfs->name = (char*)malloc(sizeof(char) * strlen(filesystem)+1);
+        strcpy(tmpfs->name, filesystem);
+        tmpfs->setup_mount = &tmpfs_setup_mount;
+        tmpfs->setup_mount(tmpfs, mt);
+        mount_dir->mount = mt;
 
-    mount_dir->mount->root->mount_parent = parent_dir;
+        mount_dir->mount->root->mount_parent = parent_dir;
+    }
+    if (!strcmp(filesystem, "initramfs")) {
+        struct mount *mt = (struct mount*)malloc(sizeof(struct mount));
+        struct filesystem* tmpfs = (struct filesystem*)malloc(sizeof(struct filesystem));
+        tmpfs->name = (char*)malloc(sizeof(char) * strlen(filesystem)+1);
+        strcpy(tmpfs->name, filesystem);
+        tmpfs->setup_mount = initramfs_setup_mount;
+        register_filesystem(tmpfs);
+        tmpfs->setup_mount(tmpfs, mt);
+        mount_dir->mount = mt;
+
+        mount_dir->mount->root->mount_parent = parent_dir;
+    }
     return 0;
 }
 
