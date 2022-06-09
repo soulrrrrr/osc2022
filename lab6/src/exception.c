@@ -137,16 +137,14 @@ void sys_exec(Trapframe *trapframe) {
     mappages((pagetable *)current_thread()->pgd, USER_PC, file_size, new_program_pa); // map user program's code
     mappages((pagetable *)current_thread()->pgd, USER_STACK_LOW, USER_STACK_SIZE, user_stack_pa); // map user program's stack
     mappages((pagetable *)current_thread()->pgd, 0x3c000000, 0x3000000, 0x3c000000); // map user program's mbox
-
     for (int i = 0; i < file_size; i++) {
         *((char *)new_program_va+i) = *(program_pos+i);
     }
-    preempt_enable();
     asm volatile("msr sp_el0, %0" : : "r"(USER_SP));
     asm volatile("msr elr_el1, %0": : "r"(USER_PC));
     asm volatile("msr spsr_el1, %0" : : "r"(0x0));
     update_pgd(current_thread()->pgd);
-    printf("go!\n");
+    preempt_enable();
     asm volatile("eret");
     trapframe->x[0] = 0;
 }
