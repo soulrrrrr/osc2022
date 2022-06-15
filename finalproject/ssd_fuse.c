@@ -15,9 +15,6 @@
 #include <time.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <vector>
-#include <iostream>
-using namespace std;
 #include "ssd_fuse_header.h"
 #define SSD_NAME       "ssd_file"
 enum
@@ -202,35 +199,40 @@ static unsigned int get_next_pca()
 static int ftl_read( char* buf, size_t lba)
 {
     // TODO
-    //printf("[Read phy] %x\n", L2P[lba]);
+    // 呼叫 nand_read
     nand_read(buf, L2P[lba]);
 }
 
 static int ftl_write(const char* buf, size_t lba_range, size_t lba)
 {
     // TODO
-    // detect dirty page
+    // 如果不是 INVALID_PCA 表示此 logic page 已被寫過，
+    // 舊的 physical 要清除 P2L 紀錄
     if (L2P[lba] != INVALID_PCA) {
-        //printf("[Change to invalid] <log>%u <phy>%u\n", lba, (L2P[lba]>>16)*10+(L2P[lba]&0xffff));
-        valid_count[L2P[lba]>>16]--; //get nand
-        
+        valid_count[L2P[lba]>>16]--;
         P2L[(L2P[lba]>>16)*10+(L2P[lba]&0xffff)] = INVALID_LBA;
     }
+    // 更新 L2P, P2L 表
     PCA_RULE temp;
     temp.pca = get_next_pca();
-    //printf("[New] <phy>%u\n", (temp.pca>>16)*10+(temp.pca&0xffff));
     L2P[lba] = temp.pca;
     P2L[temp.fields.nand*10 + temp.fields.lba] = lba;
-
+    // 呼叫 nand_write
     nand_write(buf, L2P[lba]);
 }
 
 //----------------------------------------------------------------
 
 static void gc() {
-    //int free_b = 7; // free n blocks
+    for (int i = 0; i < 13; i++) {
+        printf("%x ", valid_count[i]);
+    }
+    printf("\n");
+    
+    // free 1 block
     while(free_block_number < 1) {
-        // run gc
+
+        // 找移的 page 最少的 nand 
         int del = -1;
         unsigned int pages = 11;
         for (int i = 0; i < 13; i++) {
@@ -243,32 +245,29 @@ static void gc() {
         if (del == -1 || pages == FREE_BLOCK) {
             break;
         }
-        //printf("[GC] %d ,%d pages\n", del, 10-pages);
+        printf("[GC] %d ,%d pages\n", del, 10-pages);
         PCA_RULE temp;
         char *buf = (char *)malloc(512);
         for (int i = 0; i < 10; i++) {
-            //temp.pca = L2P[P2L[del*10+i]];
+
+            // 不是 INVALID_LBA 的 page 要移動
             if (P2L[del*10+i] != INVALID_LBA) {
-            //if (temp.fields.nand == del && temp.fields.lba == i) { // is valid page
-                // todo
-                //printf("temp pca: %d %d %x %d\n", del, i, L2P[P2L[del*10+i]], P2L[del*10+i]);
                 ftl_read(buf, P2L[del*10+i]);
                 ftl_write(buf, 0, P2L[del*10+i]);
                 P2L[del*10+i] = INVALID_LBA;
             }
-            // else {
-            //     free_b--;
-            // }
         }
         free(buf);
-        nand_erase(del);
 
+        // 都移動完了就 erase 該 nand
+        nand_erase(del);
     }
-    //printf("curr pca: %x\n", curr_pca.pca);
-    //printf("finish GC\n");
-    // for (int i = 0; i < 13; i++) {
-    //     printf("%x ", valid_count[i]);
-    // }
+
+    for (int i = 0; i < 13; i++) {
+        printf("%x ", valid_count[i]);
+    }
+    printf("\n");
+    fflush(stdout);
     return;
 }
 //----------------------------------------------------------------
@@ -339,6 +338,7 @@ static int ssd_do_read(char* buf, size_t size, off_t offset)
 
     for (int i = 0; i < tmp_lba_range; i++) {
         // TODO
+        // 呼叫 ftl_read 依序寫進 tmp_buf
         ftl_read(tmp_buf+(512*i), tmp_lba+i);
     }
 
@@ -372,21 +372,42 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
 
     tmp_lba = offset / 512;
     tmp_lba_range = (offset + size - 1) / 512 - (tmp_lba) + 1;
-    //printf("%d %d\n", tmp_lba, tmp_lba_range);
 
-    process_size = 0;
-    remain_size = size;
-    curr_size = 0;
+    process_size = 0; // 這次 for 要處理的 size
+    remain_size = size; // 剩下的 size
+    curr_size = 0; // 目前已處理的 size 
 
     tmp_buf = (char *)malloc(512);
     for (idx = 0; idx < tmp_lba_range; idx++)
     {
         // TODO
-        // garbage collection
-        if (free_block_number == 0)
-            gc();
-        //if (L2P[tmp_lba+idx] != INVALID_PCA) // read-modify-write
+        // 如果沒有 free block 以及要移的 block 跟剩下的 page 相等時做 garbage collection
+        
+        if (free_block_number == 0) {
+            int del = -1;
+            unsigned int pages = 11;
+            for (int i = 0; i < 13; i++) {
+                if (i == curr_pca.fields.nand) continue;
+                if (valid_count[i] < pages) {
+                    del = i;
+                    pages = valid_count[i];
+                }
+            }
+            if (del == -1 || pages == FREE_BLOCK) {
+                break;
+            }
+            if (9-curr_pca.fields.lba == pages) {
+                printf("-----gc\n");
+                gc();
+            }
+
+        }
+            
+        
+        // read
         ftl_read(tmp_buf, tmp_lba+idx);
+        
+        // modify
         if (idx == 0) {
             process_size = 512 - (offset % 512);
             if (size < process_size) process_size = size; // size < 512
@@ -403,6 +424,8 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
         curr_size += process_size;
         remain_size -= process_size;
         //printf("[process] %d [curr] %d [remain] %d\n", process_size, curr_size, remain_size);
+        
+        // write
         ftl_write(tmp_buf, 0, tmp_lba+idx);
     }
     free(tmp_buf);
