@@ -129,7 +129,7 @@ static int nand_write(const char* buf, int pca)
 
 static int nand_erase(int block_index)
 {
-    printf("[NAND ERASE] %d\n", block_index);
+    //printf("[NAND ERASE] %d\n", block_index);
     char nand_name[100];
     FILE* fptr;
     snprintf(nand_name, 100, "%s/nand_%d", NAND_LOCATION, block_index);
@@ -211,14 +211,14 @@ static int ftl_write(const char* buf, size_t lba_range, size_t lba)
     // TODO
     // detect dirty page
     if (L2P[lba] != INVALID_PCA) {
-        printf("[Change to invalid] <log>%u <phy>%u\n", lba, (L2P[lba]>>16)*10+(L2P[lba]&0xffff));
+        //printf("[Change to invalid] <log>%u <phy>%u\n", lba, (L2P[lba]>>16)*10+(L2P[lba]&0xffff));
         valid_count[L2P[lba]>>16]--; //get nand
         
         P2L[(L2P[lba]>>16)*10+(L2P[lba]&0xffff)] = INVALID_LBA;
     }
     PCA_RULE temp;
     temp.pca = get_next_pca();
-    printf("[New] <phy>%u\n", (temp.pca>>16)*10+(temp.pca&0xffff));
+    //printf("[New] <phy>%u\n", (temp.pca>>16)*10+(temp.pca&0xffff));
     L2P[lba] = temp.pca;
     P2L[temp.fields.nand*10 + temp.fields.lba] = lba;
 
@@ -228,8 +228,8 @@ static int ftl_write(const char* buf, size_t lba_range, size_t lba)
 //----------------------------------------------------------------
 
 static void gc() {
-    int free_b = 7; // free n blocks
-    while(free_b > 0 || free_block_number < 2) {
+    //int free_b = 7; // free n blocks
+    while(free_block_number < 1) {
         // run gc
         int del = -1;
         unsigned int pages = 11;
@@ -243,7 +243,7 @@ static void gc() {
         if (del == -1 || pages == FREE_BLOCK) {
             break;
         }
-        printf("[GC] %d ,%d pages\n", del, 10-pages);
+        //printf("[GC] %d ,%d pages\n", del, 10-pages);
         PCA_RULE temp;
         char *buf = (char *)malloc(512);
         for (int i = 0; i < 10; i++) {
@@ -256,19 +256,19 @@ static void gc() {
                 ftl_write(buf, 0, P2L[del*10+i]);
                 P2L[del*10+i] = INVALID_LBA;
             }
-            else {
-                free_b--;
-            }
+            // else {
+            //     free_b--;
+            // }
         }
         free(buf);
         nand_erase(del);
 
     }
-    printf("curr pca: %x\n", curr_pca.pca);
-    printf("finish GC\n");
-    for (int i = 0; i < 13; i++) {
-        printf("%x ", valid_count[i]);
-    }
+    //printf("curr pca: %x\n", curr_pca.pca);
+    //printf("finish GC\n");
+    // for (int i = 0; i < 13; i++) {
+    //     printf("%x ", valid_count[i]);
+    // }
     return;
 }
 //----------------------------------------------------------------
@@ -372,7 +372,7 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
 
     tmp_lba = offset / 512;
     tmp_lba_range = (offset + size - 1) / 512 - (tmp_lba) + 1;
-    printf("%d %d\n", tmp_lba, tmp_lba_range);
+    //printf("%d %d\n", tmp_lba, tmp_lba_range);
 
     process_size = 0;
     remain_size = size;
@@ -402,7 +402,7 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
         }
         curr_size += process_size;
         remain_size -= process_size;
-        printf("[process] %d [curr] %d [remain] %d\n", process_size, curr_size, remain_size);
+        //printf("[process] %d [curr] %d [remain] %d\n", process_size, curr_size, remain_size);
         ftl_write(tmp_buf, 0, tmp_lba+idx);
     }
     free(tmp_buf);
