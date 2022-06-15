@@ -2,6 +2,10 @@
 
 0816034 蔡家倫
 
+## 0. code
+
+[Github Link](https://github.com/soulrrrrr/osc2022/tree/lab8/finalproject)
+
 ## 1. FUSE 目的及原理
 
 FUSE 是 filesystem in userspace 的簡稱，可以讓 userspace programs 建立虛擬檔案系統，不用重新 compile kernel。本次 lab 就是使用 FUSE 模擬 ssd 。
