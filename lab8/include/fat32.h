@@ -88,7 +88,7 @@ int fat32_setup_mount(struct filesystem* fs, struct mount* mount);
 struct vnode* fat32_create_vnode(struct fat32_internal* fat32_node);
 // vnode operations
 int fat32_lookup(struct vnode* dir, struct vnode** target, const char* component_name);
-// int fat32_create(struct vnode* dir, struct vnode** target, const char* component_name);
+int fat32_create(struct vnode* dir, struct vnode** target, const char* component_name);
 // int fat32_ls(struct vnode* dir);
 // int fat32_mkdir(struct vnode* dir, struct vnode** target, const char* component_name);
 // int fat32_load_dentry(struct dentry* dir, char* component_name);

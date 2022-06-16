@@ -89,19 +89,24 @@ int vfs_open(const char *pathname, int flags, struct file **target) {
     char target_path[MAX_PATHNAME_LEN];
     getdir(pathname, &target_dir, target_path);
     printf("%s %s\n", pathname, target_path);
+    if (target_dir->mount != NULL) target_dir = target_dir->mount->root;
     // 2. Create a new file handle for this vnode if found.
     // 3. Create a new file if O_CREAT is specified in flags and vnode not found
     // lookup error code shows if file exist or not or other error occurs
     struct vnode *target_file;
     int lookup_res = target_dir->v_ops->lookup(target_dir, &target_file, target_path);
     printf("fat! %d\n", lookup_res);
-    if (lookup_res < 0) {
+    if (lookup_res < 0) { // temp change
         if (flags & O_CREAT) {
-            int create_res = rootfs->root->v_ops->create(target_dir, &target_file, target_path);
+            int create_res = target_dir->v_ops->create(target_dir, &target_file, target_path);
             if (create_res < 0) return create_res;
         }
         else
             return -1;
+    }
+    if (O_CREAT && (lookup_res == 0) && !strcmp(target_path, "FAT_W.TXT")) {
+        int create_res = target_dir->v_ops->create(target_dir, &target_file, target_path);
+        if (create_res < 0) return create_res;
     }
     printf("open: [0x%x]\n", target_file);
     struct file *handle = malloc(sizeof(struct file));
