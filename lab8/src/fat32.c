@@ -215,11 +215,12 @@ int fat32_write(struct file* file, const void* buf, uint64_t len) {
     // write first block, handle f_pos
     int buf_idx, f_pos_offset = file->f_pos % FAT_BLOCK_SIZE;
     
-    printf("write %d\n", get_cluster_blk_idx(current_cluster));
+    printf("write %d %d %d\n", buf_idx, f_pos_offset, get_cluster_blk_idx(current_cluster));
     readblock(get_cluster_blk_idx(current_cluster), write_buf);
     for (buf_idx = 0; buf_idx < FAT_BLOCK_SIZE - f_pos_offset && buf_idx < len; buf_idx++) {
         write_buf[buf_idx + f_pos_offset] = ((char*)buf)[buf_idx];
     }
+    printf("w%d\n", get_cluster_blk_idx(current_cluster));
     writeblock(get_cluster_blk_idx(current_cluster), write_buf);
     file->f_pos += buf_idx;
 
@@ -227,6 +228,7 @@ int fat32_write(struct file* file, const void* buf, uint64_t len) {
     int remain_len = len - buf_idx;
     while (remain_len > 0 && current_cluster >= fat32_metadata.first_cluster && current_cluster != EOC) {
         // write block
+        printf("w%d\n", get_cluster_blk_idx(current_cluster));
         writeblock(get_cluster_blk_idx(current_cluster), buf + buf_idx);
         file->f_pos += (remain_len < FAT_BLOCK_SIZE) ? remain_len : FAT_BLOCK_SIZE;
         remain_len -= FAT_BLOCK_SIZE;
@@ -256,10 +258,11 @@ int fat32_write(struct file* file, const void* buf, uint64_t len) {
                 continue;
             }
             // find target file directory entry
-            if (((sector_dirent[i].cluster_high) << 16) | (sector_dirent[i].cluster_low) == file_node->first_cluster) {
+            if ((((sector_dirent[i].cluster_high) << 16) | (sector_dirent[i].cluster_low)) == file_node->first_cluster) {
                 sector_dirent[i].size = (uint32_t)file->f_pos;
             }
         }
+        printf("w%d\n", file_node->dirent_cluster);
         writeblock(file_node->dirent_cluster, sector);
     }
 

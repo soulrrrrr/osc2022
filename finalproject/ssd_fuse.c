@@ -201,6 +201,7 @@ static int ftl_read( char* buf, size_t lba)
     // TODO
     // 呼叫 nand_read
     nand_read(buf, L2P[lba]);
+    return 0;
 }
 
 static int ftl_write(const char* buf, size_t lba_range, size_t lba)
@@ -219,18 +220,22 @@ static int ftl_write(const char* buf, size_t lba_range, size_t lba)
     P2L[temp.fields.nand*10 + temp.fields.lba] = lba;
     // 呼叫 nand_write
     nand_write(buf, L2P[lba]);
+    return 0;
 }
 
 //----------------------------------------------------------------
+char gcbuf[512];
 
 static void gc() {
-    for (int i = 0; i < 13; i++) {
-        printf("%x ", valid_count[i]);
-    }
-    printf("\n");
+    // for (int i = 0; i < 13; i++) {
+    //     printf("%x ", valid_count[i]);
+    // }
+    // printf("\n");
     
     // free 1 block
-    while(free_block_number < 1) {
+    int t = 1;
+    while(t-- > 0) {
+    //while(free_block_number < 1) {
 
         // 找移的 page 最少的 nand 
         int del = -1;
@@ -245,29 +250,28 @@ static void gc() {
         if (del == -1 || pages == FREE_BLOCK) {
             break;
         }
-        printf("[GC] %d ,%d pages\n", del, 10-pages);
-        PCA_RULE temp;
-        char *buf = (char *)malloc(512);
+        //printf("[GC] %d ,%d pages\n", del, 10-pages);
+        //char *buf = (char *)malloc(512);
         for (int i = 0; i < 10; i++) {
 
             // 不是 INVALID_LBA 的 page 要移動
             if (P2L[del*10+i] != INVALID_LBA) {
-                ftl_read(buf, P2L[del*10+i]);
-                ftl_write(buf, 0, P2L[del*10+i]);
+                ftl_read(gcbuf, P2L[del*10+i]);
+                ftl_write(gcbuf, 0, P2L[del*10+i]);
                 P2L[del*10+i] = INVALID_LBA;
             }
         }
-        free(buf);
+        //free(buf);
 
         // 都移動完了就 erase 該 nand
         nand_erase(del);
     }
 
-    for (int i = 0; i < 13; i++) {
-        printf("%x ", valid_count[i]);
-    }
-    printf("\n");
-    fflush(stdout);
+    // for (int i = 0; i < 13; i++) {
+    //     printf("%x ", valid_count[i]);
+    // }
+    // printf("\n");
+    // fflush(stdout);
     return;
 }
 //----------------------------------------------------------------
@@ -358,11 +362,13 @@ static int ssd_read(const char* path, char* buf, size_t size,
     }
     return ssd_do_read(buf, size, offset);
 }
+
+char tmp_buf[512];
 static int ssd_do_write(const char* buf, size_t size, off_t offset)
 {
     int tmp_lba, tmp_lba_range, process_size;
     int idx, curr_size, remain_size, rst;
-    char* tmp_buf;
+    //char* tmp_buf;
 
     host_write_size += size;
     if (ssd_expand(offset + size) != 0)
@@ -377,12 +383,15 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
     remain_size = size; // 剩下的 size
     curr_size = 0; // 目前已處理的 size 
 
-    tmp_buf = (char *)malloc(512);
+    //tmp_buf = (char *)malloc(512);
     for (idx = 0; idx < tmp_lba_range; idx++)
     {
         // TODO
         // 如果沒有 free block 以及要移的 block 跟剩下的 page 相等時做 garbage collection
-        
+        // if (free_block_number == 0) {
+        //     printf("------\n");
+        //     gc();
+        // } 
         if (free_block_number == 0) {
             int del = -1;
             unsigned int pages = 11;
@@ -397,7 +406,7 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
                 break;
             }
             if (9-curr_pca.fields.lba == pages) {
-                printf("-----gc\n");
+                //printf("-----gc\n");
                 gc();
             }
 
@@ -428,7 +437,7 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
         // write
         ftl_write(tmp_buf, 0, tmp_lba+idx);
     }
-    free(tmp_buf);
+    //free(tmp_buf);
     return size;
 }
 static int ssd_write(const char* path, const char* buf, size_t size,
